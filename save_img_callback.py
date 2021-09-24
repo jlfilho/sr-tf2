@@ -9,24 +9,22 @@ from metrics import psnr, ssim
 tnp.experimental_enable_numpy_behavior()
 
 class SaveImageCallback(tf.keras.callbacks.Callback):
-    def __init__(self, args=None,model=None):
+    def __init__(self, model=None,model_name=None,
+    epochs_per_save=1,log_dir=None,dataset=None):
         super(SaveImageCallback, self).__init__()
-        self.dataset = Dataset(args.batch_size,
-                               args.dataset_path,
-                               args.dataset_info_path)
-        self.data_batch, self.iterator = self.dataset.get_data()
-        self.gen_model = model
-        self.model_name = args.model
-        self.logdir = args.logdir
-        self.epochs_per_save = args.epochs_per_save
+        self.data_batch = dataset
+        self._model = model
+        self.model_name = model_name
+        self.logdir = log_dir
+        self.epochs_per_save = epochs_per_save
 
     def on_epoch_end(self, epoch,logs=None):
         if (epoch % self.epochs_per_save == 0):
-            batch = self.iterator.next()
+            batch = self.data_batch
             self.plot_test_images(batch, epoch)
     
     def predict(self,img):
-        img_sr=np.squeeze(self.gen_model.predict(
+        img_sr=np.squeeze(self._model.predict(
             np.expand_dims(img, 0),
             batch_size=1),axis=0)
         img_sr = np.array(img_sr * 255)  
@@ -34,9 +32,9 @@ class SaveImageCallback(tf.keras.callbacks.Callback):
         
     def plot_test_images(self, batch, epoch):    
         try:
-            imgs_lr_n = tf.keras.layers.Lambda(lambda x: x / 255.0)(batch[1])
-            imgs_lr = [np.array(img) for img in batch[1]]
-            imgs_hr = [np.array(img) for img in batch[3]]
+            imgs_lr_n = tf.keras.layers.Lambda(lambda x: x / 255.0)(batch[0])
+            imgs_lr = [np.array(img) for img in batch[0]]
+            imgs_hr = [np.array(img) for img in batch[1]]
             imgs_sr = [self.predict(img) for img in imgs_lr_n]
             count=1
             for img_hr, img_lr, img_sr in zip(imgs_hr, imgs_lr, imgs_sr):

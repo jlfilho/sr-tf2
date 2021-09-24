@@ -2,7 +2,7 @@ import tensorflow as tf
 
 def espcn(scale_factor=2):   
     inputs = tf.keras.layers.Input(shape=(None,None,1),name='input')
-    
+
     net = tf.pad(inputs, [[0, 0], [4, 4], [4, 4], [0, 0]], 'SYMMETRIC')
     
     net = tf.keras.layers.Conv2D(64, 5,activation='tanh', padding='valid',strides=(1, 1), name='conv1',

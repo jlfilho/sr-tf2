@@ -21,18 +21,14 @@ class Dataset:
         return [tf.reshape(tf.cast(tf.io.decode_raw(parsed_features[key], tf.uint8), tf.float32), value)
                 for key, value in self.input_info.items()]
     
-    def get_data(self):
+    def get_data(self,epoch=None):
         dataset = tf.data.TFRecordDataset(self._dataset_path)
         dataset = dataset.map(self._parse_tf_example,num_parallel_calls=tf.data.AUTOTUNE)
         dataset = dataset.prefetch(buffer_size=self._shuffle_buffer_size)
         if self._shuffle_buffer_size != 0:
             dataset = dataset.shuffle(buffer_size=self._shuffle_buffer_size,reshuffle_each_iteration=True)
-        dataset = dataset.repeat()
-        dataset = dataset.batch(self._batch_size,drop_remainder=True)
-        #dataset = tf.cast(dataset, tf.float32) / 255.0
-        iterator = iter(dataset)       
-        data_batch = iterator.get_next()
-        keys = list(self.input_info.keys())
-        data_batch = dict([(keys[i], data_batch[i]) for i in range(len(keys))])
-
-        return data_batch, iterator
+        if epoch != None:
+            dataset = dataset.batch(self._batch_size,drop_remainder=True).repeat(epoch)
+        else:
+            dataset = dataset.batch(self._batch_size,drop_remainder=True)
+        return dataset

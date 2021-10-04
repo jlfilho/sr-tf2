@@ -2,42 +2,44 @@ import tensorflow as tf
 from dataset import Dataset
 import argparse
 from model_espcn import espcn 
-from model_rtvsrgan import rtvsrgan
+from model_rtvsrsnt import rtvsrsnt
 from model_discriminator import discriminator
 from model_gan import GAN
 from metrics import psnr, ssim
 from save_img_callback import SaveImageCallback
+from losses import discriminator_loss, generator_loss
 
 
 MODEL='rtvsrgan'
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 TEST_BATCH_SIZE = 4
 SHUFFLE_BUFFER_SIZE = 45150
 OPTIMIZER='adam'
-LEARNING_RATE = 1e-3
+LEARNING_RATE = 1e-4
 LEARNING_DECAY_RATE = 1e-1
-LEARNING_DECAY_EPOCHS = 40
-MOMENTUM = 0.9
-NUM_EPOCHS = 10
-STEPS_PER_EPOCH = 500
-SAVE_NUM = 2
-STEPS_PER_LOG = 1000
-EPOCHS_PER_SAVE = 2
+LEARNING_DECAY_EPOCHS = 5
+NUM_EPOCHS = 100
+STEPS_PER_EPOCH = 0
+EPOCHS_PER_SAVE = 5
 LOGDIR = 'logdir'
+CHECKPOINT = 'checkpoint/'
 
 TEST_LOGDIR='test_logdir/'
 
 
-TRAINING_DATASET_PATH='/home/joao/Documentos/projetos/ssd/dataset/train_football-qp27/dataset.tfrecords'
-TRAINING_DATASET_INFO_PATH='/home/joao/Documentos/projetos/ssd/dataset/train_football-qp27/dataset_info.txt'
+TRAINING_DATASET_PATH='/home/joao/Documentos/projetos/ssd/dataset/train_football-qp17/dataset.tfrecords'
+TRAINING_DATASET_INFO_PATH='/home/joao/Documentos/projetos/ssd/dataset/train_football-qp17/dataset_info.txt'
+TESTING_DATASET_PATH='/home/joao/Documentos/projetos/ssd/dataset/test_football-qp17/dataset.tfrecords'
+TESTING_DATASET_INFO_PATH='/home/joao/Documentos/projetos/ssd/dataset/test_football-qp17/dataset_info.txt'
 
-TESTING_DATASET_PATH='/home/joao/Documentos/projetos/ssd/dataset/test_football-qp27/dataset.tfrecords'
-TESTING_DATASET_INFO_PATH='/home/joao/Documentos/projetos/ssd/dataset/test_football-qp27/dataset_info.txt'
-
+# TRAINING_DATASET_PATH='/home/joao/Documentos/projetos/ssd/dataset/train_div2k/dataset.tfrecords'
+# TRAINING_DATASET_INFO_PATH='/home/joao/Documentos/projetos/ssd/dataset/train_div2k/dataset_info.txt'
+# TESTING_DATASET_PATH='/home/joao/Documentos/projetos/ssd/dataset/test_div2k/dataset.tfrecords'
+# TESTING_DATASET_INFO_PATH='/home/joao/Documentos/projetos/ssd/dataset/test_div2k/dataset_info.txt'
 
 def get_arguments():
     parser = argparse.ArgumentParser(description='train one of the models for image and video super-resolution')
-    parser.add_argument('--model', type=str, default=MODEL, choices=['espcn','rtvsrgan','gan'],
+    parser.add_argument('--model', type=str, default=MODEL, choices=['espcn','rtvsrsnt','rtvsrgan'],
                         help='What model to train')
     parser.add_argument('--batch_size', type=int, default=BATCH_SIZE,
                         help='Number of images in batch')
@@ -51,7 +53,7 @@ def get_arguments():
                         help='Path to the test dataset')
     parser.add_argument('--valid_dataset_info_path', type=str, default=TESTING_DATASET_INFO_PATH,
                         help='Path to the train dataset info')
-    parser.add_argument('--ckpt_path', default=LOGDIR+'/model.ckpt',
+    parser.add_argument('--ckpt_path', default=CHECKPOINT,
                         help='Path to the model checkpoint to evaluate')
     parser.add_argument('--load_weights', action='store_true',
                         help='Path to the model checkpoint to evaluate')
@@ -73,10 +75,6 @@ def get_arguments():
                         help='Number of training epochs')
     parser.add_argument('--steps_per_epochs', type=int, default=STEPS_PER_EPOCH,
                         help='How many steps per epochs')
-    parser.add_argument('--save_num', type=int, default=SAVE_NUM,
-                        help='How many images to write to summary')
-    parser.add_argument('--steps_per_log', type=int, default=STEPS_PER_LOG,
-                        help='How often to save summaries')
     parser.add_argument('--epochs_per_save', type=int, default=EPOCHS_PER_SAVE,
                         help='How often to save checkpoints')
     parser.add_argument('--use_mc', action='store_true',
@@ -98,9 +96,12 @@ def main():
         args.train_dataset_info_path,
         args.shuffle_buffer_size)
 
-    steps_per_epoch = train_dataset.examples_num // args.batch_size \
-        if train_dataset.examples_num % args.batch_size != 0 else 0
-    steps_per_epoch = 100
+    if args.steps_per_epochs == 0:
+        steps_per_epoch = train_dataset.examples_num // args.batch_size \
+            if train_dataset.examples_num % args.batch_size != 0 else 0
+    else:
+        steps_per_epoch = args.steps_per_epochs
+
 
     train_dataset = train_dataset.get_data(args.num_epochs)
     train_batch = train_dataset.map(lambda x0,x1,x2,y: (x1/255.0,y/255.0))
@@ -117,7 +118,7 @@ def main():
     test_batch = iter(test_batch).get_next() 
     
     checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-        filepath=args.ckpt_path,
+        filepath=args.ckpt_path+args.model+'/model.ckpt',
         save_weights_only=True,
         monitor='psnr',
         save_freq= 'epoch', 
@@ -130,7 +131,15 @@ def main():
         write_graph=True,
         write_images=True, 
         write_steps_per_second=True,
-        update_freq='epoch')
+        update_freq='epoch') 
+    
+    earlystopping = tf.keras.callbacks.EarlyStopping(
+            monitor='psnr', 
+            patience=20, verbose=1, 
+            restore_best_weights=True)
+    
+    reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=args.lr_decay_rate,
+                                    patience=args.lr_decay_epochs, mode='min', min_lr=1e-6,verbose=1)
     
     if args.model == 'espcn':
         model = espcn()
@@ -139,7 +148,7 @@ def main():
         model.compile(optimizer=opt, loss=loss, metrics=[psnr,ssim])
         if args.load_weights:
             print("Loading weights...")
-            model.load_weights(args.ckpt_path)
+            model.load_weights(args.ckpt_path+args.model+'/model.ckpt')
         
         save_img_callback = SaveImageCallback(
             dataset=test_batch,
@@ -148,19 +157,22 @@ def main():
             epochs_per_save=args.epochs_per_save,
             log_dir=args.test_logdir)
 
-        callbacks=[checkpoint_callback,tensorboard_callback,save_img_callback]
+        callbacks=[checkpoint_callback,tensorboard_callback,save_img_callback,earlystopping,reduce_lr]
 
         model.fit(train_batch,epochs=args.num_epochs,callbacks=callbacks,
         verbose=1,steps_per_epoch=steps_per_epoch,validation_data=valid_batch)
     
-    if args.model == 'rtvsrgan':
-        model = rtvsrgan()
+    if args.model == 'rtvsrsnt':
+        model = rtvsrsnt()
         opt = tf.keras.optimizers.Adam(learning_rate=args.learning_rate)
         loss = tf.keras.losses.MeanSquaredError()
+        #loss = tf.keras.losses.MeanAbsoluteError()
+        #loss = tf.keras.losses.Huber()
         model.compile(optimizer=opt, loss=loss, metrics=[psnr,ssim])
         if args.load_weights:
             print("Loading weights...")
-            model.load_weights(args.ckpt_path)
+            model.load_weights(args.ckpt_path+args.model+'/model.ckpt')
+        
         save_img_callback = SaveImageCallback(
             dataset=test_batch,
             model=model,
@@ -168,22 +180,24 @@ def main():
             epochs_per_save=args.epochs_per_save,
             log_dir=args.test_logdir)
 
-        callbacks=[checkpoint_callback,tensorboard_callback,save_img_callback]
+        callbacks=[checkpoint_callback,tensorboard_callback,save_img_callback,earlystopping,reduce_lr]
         model.fit(train_batch,epochs=args.num_epochs,callbacks=callbacks,
         verbose=1,steps_per_epoch=steps_per_epoch,validation_data=valid_batch)
 
-    if args.model == 'gan':
-        g=rtvsrgan()
+    if args.model == 'rtvsrgan':
+        g=rtvsrsnt()
         d=discriminator()
-        gan = GAN(discriminator=d, generator=g)
-        gan.compile(
-        d_optimizer=tf.keras.optimizers.Adam(learning_rate=args.learning_rate),
-        g_optimizer=tf.keras.optimizers.Adam(learning_rate=args.learning_rate),
-        loss_fn=tf.keras.losses.BinaryCrossentropy(from_logits=True),metrics=[psnr,ssim])
+        gan = GAN(discriminator = d, generator = g)
+        gan.compile(d_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate),
+                    g_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate),
+                    d_loss = discriminator_loss,
+                    g_loss = generator_loss,
+                    metrics=[psnr,ssim])
+
         if (args.load_weights):
             print("Loading weights...")
-            gan.load_weights_gen(args.ckpt_path)
-        
+            gan.load_weights_gen(args.ckpt_path+'rtvsrsnt/model.ckpt')
+            
         save_img_callback = SaveImageCallback(
             dataset=test_batch,
             model=g,
@@ -191,10 +205,12 @@ def main():
             epochs_per_save=args.epochs_per_save,
             log_dir=args.test_logdir)
 
-        callbacks=[checkpoint_callback,tensorboard_callback,save_img_callback]
+        callbacks=[checkpoint_callback,tensorboard_callback,save_img_callback,earlystopping,reduce_lr] 
 
         gan.fit(train_batch, epochs=args.num_epochs,callbacks=callbacks,
         verbose=1,steps_per_epoch=steps_per_epoch)
+
+        gan.save_weights_gen(args.ckpt_path+args.model+'/rtvsrgan_gen/model.ckpt')
     else:
         exit(1)
 

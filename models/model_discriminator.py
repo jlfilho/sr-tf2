@@ -20,7 +20,7 @@ def discriminator(filters=64,input_shape=(72,72,1)):
     x = conv2d_block(x, filters*8, strides=2)
     x = tf.keras.layers.Dense(filters*16)(x)
     x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
-    x = tf.keras.layers.Dense(0.4)(x)
+    x = tf.keras.layers.Dropout(0.4)(x)
     x = tf.keras.layers.Dense(1,activation='sigmoid')(x)
     model = tf.keras.Model(inputs=input, outputs=x,name='Discriminator')
     return model

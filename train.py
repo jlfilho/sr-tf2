@@ -1,13 +1,16 @@
 import tensorflow as tf
-from dataset import Dataset
 import argparse
-from model_espcn import espcn 
-from model_rtvsrsnt import rtvsrsnt
-from model_discriminator import discriminator
-from model_gan import GAN
-from metrics import psnr, ssim
-from save_img_callback import SaveImageCallback
-from losses import discriminator_loss, generator_loss
+
+from models.dataset import Dataset
+from models.model_espcn import espcn 
+from models.rtsrgan.model_generator import g_rtsrgan 
+from models.rtsrgan.model_discriminator import d_rtsrgan
+from models.model_rtvsrsnt import rtvsrsnt
+from models.model_discriminator import discriminator
+from models.model_gan import GAN
+from models.metrics import psnr, ssim, rmse
+from models.save_img_callback import SaveImageCallback
+from models.losses import discriminator_loss, generator_loss
 
 
 MODEL='rtvsrgan'
@@ -39,7 +42,7 @@ TESTING_DATASET_INFO_PATH='/home/joao/Documentos/projetos/ssd/dataset/test_footb
 
 def get_arguments():
     parser = argparse.ArgumentParser(description='train one of the models for image and video super-resolution')
-    parser.add_argument('--model', type=str, default=MODEL, choices=['espcn','rtvsrsnt','rtvsrgan'],
+    parser.add_argument('--model', type=str, default=MODEL, choices=['espcn','g_rtsrgan','rtsrgan','rtvsrsnt','rtvsrgan'],
                         help='What model to train')
     parser.add_argument('--batch_size', type=int, default=BATCH_SIZE,
                         help='Number of images in batch')
@@ -161,7 +164,53 @@ def main():
 
         model.fit(train_batch,epochs=args.num_epochs,callbacks=callbacks,
         verbose=1,steps_per_epoch=steps_per_epoch,validation_data=valid_batch)
-    
+    if args.model == 'g_rtsrgan':
+        model = g_rtsrgan()
+        opt = tf.keras.optimizers.Adam(learning_rate=args.learning_rate)
+        loss = tf.keras.losses.MeanSquaredError()
+        model.compile(optimizer=opt, loss=loss, metrics=[psnr,ssim,rmse])
+        if args.load_weights:
+            print("Loading weights...")
+            model.load_weights(args.ckpt_path+args.model+'/model.ckpt')
+        
+        save_img_callback = SaveImageCallback(
+            dataset=test_batch,
+            model=model,
+            model_name=args.model,
+            epochs_per_save=args.epochs_per_save,
+            log_dir=args.test_logdir)
+
+        callbacks=[checkpoint_callback,tensorboard_callback,save_img_callback,earlystopping,reduce_lr]
+        model.fit(train_batch,epochs=args.num_epochs,callbacks=callbacks,
+        verbose=1,steps_per_epoch=steps_per_epoch,validation_data=valid_batch)
+    if args.model == 'rtsrgan':
+        g=g_rtsrgan()
+        d=d_rtsrgan()
+        gan = GAN(discriminator = d, generator = g)
+        gan.compile(d_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate),
+                    g_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate),
+                    d_loss = discriminator_loss,
+                    g_loss = generator_loss,
+                    metrics=[psnr,ssim,rmse])
+        
+        if (args.load_weights):
+            print("Loading weights...")
+            gan.load_weights_gen(args.ckpt_path+'g_rtsrgan/model.ckpt')
+            
+        save_img_callback = SaveImageCallback(
+            dataset=test_batch,
+            model=g,
+            model_name=args.model,
+            epochs_per_save=args.epochs_per_save,
+            log_dir=args.test_logdir)
+
+        callbacks=[checkpoint_callback,tensorboard_callback,save_img_callback,earlystopping,reduce_lr] 
+
+        gan.fit(train_batch, epochs=args.num_epochs,callbacks=callbacks,
+        verbose=1,steps_per_epoch=steps_per_epoch)
+
+        gan.save_weights_gen(args.ckpt_path+args.model+'/g_rtsrgan/model.ckpt')
+
     if args.model == 'rtvsrsnt':
         model = rtvsrsnt()
         opt = tf.keras.optimizers.Adam(learning_rate=args.learning_rate)
@@ -210,7 +259,7 @@ def main():
         gan.fit(train_batch, epochs=args.num_epochs,callbacks=callbacks,
         verbose=1,steps_per_epoch=steps_per_epoch)
 
-        gan.save_weights_gen(args.ckpt_path+args.model+'/rtvsrgan_gen/model.ckpt')
+        gan.save_weights_gen(args.ckpt_path+args.model+'/g_rtvsrgan/model.ckpt')
     else:
         exit(1)
 

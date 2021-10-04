@@ -3,8 +3,8 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow.experimental.numpy as tnp
-from dataset import Dataset
-from metrics import psnr, ssim
+from models.dataset import Dataset
+from models.metrics import psnr, ssim
 
 tnp.experimental_enable_numpy_behavior()
 

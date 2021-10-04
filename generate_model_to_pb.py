@@ -6,8 +6,8 @@ from tensorflow.keras.models import Model
 from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 import tensorflow.compat.v1 as tf1
 
-from model_espcn import espcn 
-from model_rtvsrgan import rtvsrgan
+from models.model_espcn import espcn 
+from models.model_rtvsrsnt import rtvsrsnt
 
 
 def get_arguments():

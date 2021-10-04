@@ -19,9 +19,9 @@ class SaveImageCallback(tf.keras.callbacks.Callback):
         self.epochs_per_save = epochs_per_save
 
     def on_epoch_end(self, epoch,logs=None):
-        if (epoch % self.epochs_per_save == 0):
+        if ((epoch+1) % self.epochs_per_save == 0):
             batch = self.data_batch
-            self.plot_test_images(batch, epoch)
+            self.plot_test_images(batch, epoch+1)
     
     def predict(self,img):
         img_sr=np.squeeze(self._model.predict(

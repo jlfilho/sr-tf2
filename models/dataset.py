@@ -24,7 +24,7 @@ class Dataset:
     def get_data(self,epoch=None):
         dataset = tf.data.TFRecordDataset(self._dataset_path)
         dataset = dataset.map(self._parse_tf_example,num_parallel_calls=tf.data.AUTOTUNE)
-        dataset = dataset.prefetch(buffer_size=self._shuffle_buffer_size)
+        dataset = dataset.cache().prefetch(buffer_size=tf.data.AUTOTUNE)
         if self._shuffle_buffer_size != 0:
             dataset = dataset.shuffle(buffer_size=self._shuffle_buffer_size,reshuffle_each_iteration=True)
         if epoch != None:

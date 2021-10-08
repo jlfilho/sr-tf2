@@ -1,4 +1,5 @@
 import tensorflow as tf
+from models.Model import Model
 
 def g_rtsrgan(scale_factor=2):   
     def block(input,filters,kernel_size,name, bn=True):
@@ -21,9 +22,9 @@ def g_rtsrgan(scale_factor=2):
     net = block(net,32,3,'conv3')
     net = tf.keras.activations.tanh(net)
     
-    net = tf.keras.layers.Conv2D(scale_factor ** 2, 3, padding='valid',strides=(1, 1), name='conv4',
+    net = tf.keras.layers.Conv2D(scale_factor ** 2, 3, padding='valid',strides=(1, 1), name='final',
                                 kernel_initializer=tf.keras.initializers.HeNormal())(net)
     net = tf.keras.layers.Lambda(lambda x:tf.nn.depth_to_space(x,scale_factor),name = 'prediction')(net)
-    outputs = tf.keras.activations.sigmoid(net)
-    model = tf.keras.Model(inputs=inputs, outputs=outputs,name='g_rtsrgan')
+    outputs = tf.keras.activations.tanh(net)
+    model = Model(inputs=inputs, outputs=outputs,name='g_rtsrgan')
     return model

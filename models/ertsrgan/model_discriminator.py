@@ -24,3 +24,4 @@ def d_ertsrgan(filters=64,input_shape=(72,72,1)):
     x = tf.keras.layers.Dense(1,activation='sigmoid')(x)
     model = tf.keras.Model(inputs=input, outputs=x,name='d_ertsrgan')
     return model
+

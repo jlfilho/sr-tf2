@@ -18,11 +18,11 @@ from models.utils import scale_1 as scale
 MODEL='rtvsrgan'
 BATCH_SIZE = 32
 TEST_BATCH_SIZE = 1
-SHUFFLE_BUFFER_SIZE = 45150
+SHUFFLE_BUFFER_SIZE = 0
 OPTIMIZER='adam'
 LEARNING_RATE = 1e-4
 LEARNING_DECAY_RATE = 1e-1
-LEARNING_DECAY_EPOCHS = 30
+LEARNING_DECAY_EPOCHS = 10
 NUM_EPOCHS = 100
 STEPS_PER_EPOCH = 50
 EPOCHS_PER_SAVE = 5
@@ -119,32 +119,41 @@ def main():
     checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
         filepath=args.ckpt_path+args.model+'/model.ckpt',
         save_weights_only=True,
-        monitor='val_psnr',
+        monitor='val_loss',
         save_freq= 'epoch', 
-        mode='max',
+        mode='min',
         save_best_only=True)
 
     tensorboard_callback = tf.keras.callbacks.TensorBoard(
         log_dir=args.logdir+"/"+args.model,
-        histogram_freq=0, 
+        histogram_freq=1, 
         write_graph=True,
         write_images=True, 
         write_steps_per_second=True,
-        update_freq='epoch') 
+        update_freq='batch') 
     file_writer_cm = tf.summary.create_file_writer(args.logdir+"/"+args.model + '/validation')
     
     earlystopping = tf.keras.callbacks.EarlyStopping(
-            monitor='val_psnr', 
+            monitor='val_loss', 
+            min_delta=1e-5,
             patience=50, verbose=1,
-            mode='max', 
+            mode='min', 
             restore_best_weights=True)
     
-    reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_psnr', factor=args.lr_decay_rate,
-                                    patience=args.lr_decay_epochs, mode='max', min_lr=1e-6,verbose=1)
+    reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_rmse', factor=args.lr_decay_rate,
+                                    patience=args.lr_decay_epochs, mode='min', min_lr=1e-6,verbose=1)
+    
+    initial_learning_rate = 1e-2
+    lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+        initial_learning_rate,
+        decay_steps=1000,
+        decay_rate=0.1,
+        staircase=True)
     
     if args.model == 'espcn':
-        model = espcn()
-        opt = tf.keras.optimizers.Adam(learning_rate=args.learning_rate)
+        model = espcn(file_writer_cm=file_writer_cm)
+        opt = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipvalue=0.5)#,clipnorm=1.0
+        #opt = tf.keras.optimizers.Adam(learning_rate=lr_schedule,clipnorm=1.0)
         loss = tf.keras.losses.MeanSquaredError()
         model.compile(optimizer=opt, loss=loss, metrics=[psnr,ssim,rmse])
         if args.load_weights:
@@ -159,14 +168,14 @@ def main():
             log_dir=args.test_logdir,
             file_writer_cm=file_writer_cm)
 
-        callbacks=[checkpoint_callback,tensorboard_callback,save_img_callback,earlystopping,reduce_lr]
+        callbacks=[checkpoint_callback,tensorboard_callback,save_img_callback,earlystopping,reduce_lr] 
 
         model.fit(train_batch,epochs=args.num_epochs,callbacks=callbacks,
         verbose=1,steps_per_epoch=steps_per_epoch,validation_data=valid_batch)
     
     if args.model == 'g_rtsrgan':
         model = g_rtsrgan()
-        opt = tf.keras.optimizers.Adam(learning_rate=args.learning_rate)
+        opt = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0)
         loss = tf.keras.losses.MeanSquaredError()
         model.compile(optimizer=opt, loss=loss, metrics=[psnr,ssim,rmse])
         if args.load_weights:
@@ -187,7 +196,8 @@ def main():
     
     if args.model == 'g_ertsrgan':
         model = g_ertsrgan()
-        opt = tf.keras.optimizers.Adam(learning_rate=args.learning_rate)
+        opt = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0) 
+        #opt = tf.keras.optimizers.Adam(learning_rate=lr_schedule,clipnorm=1.0)
         loss = tf.keras.losses.MeanSquaredError()
         #loss = tf.keras.losses.MeanAbsoluteError()
         #loss = tf.keras.losses.Huber()
@@ -212,8 +222,8 @@ def main():
         g=g_rtsrgan()
         d=d_rtsrgan()
         gan = GAN(discriminator = d, generator = g)
-        gan.compile(d_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate),
-                    g_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate),
+        gan.compile(d_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
+                    g_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
                     d_loss = discriminator_loss,
                     g_loss = generator_loss,
                     metrics=[psnr,ssim,rmse])
@@ -241,8 +251,8 @@ def main():
         g=g_ertsrgan()
         d=d_ertsrgan()
         gan = GAN(discriminator = d, generator = g)
-        gan.compile(d_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate),
-                    g_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate),
+        gan.compile(d_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
+                    g_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
                     d_loss = discriminator_loss,
                     g_loss = generator_loss,
                     metrics=[psnr,ssim,rmse])
@@ -271,15 +281,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # if args.model == 'espcn':
-    #     run_espcn()
-    # if args.model == 'g_rtsrgan':
-    #     run_g_rtsrgan()
-    # if args.model == 'rtsrgan':
-    #     run_rtsrgan()
-    # if args.model == 'g_rtvsrgan':
-    #     run_g_rtvsrgan()
-    # if args.model == 'rtvsrgan':
-    #     run_rtvsrgan()
-    # else:
-    #     exit(1)

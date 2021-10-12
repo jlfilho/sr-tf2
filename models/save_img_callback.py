@@ -74,6 +74,8 @@ class SaveImageCallback(tf.keras.callbacks.Callback):
                 fig, axes = plt.subplots(1, 4, figsize=(40, 10))
                 for i, (title, img) in enumerate(images.items()):
                     axes[i].imshow(img[0],cmap='gray', vmin=0, vmax=255)
+                    print("{} - {} {} {}".format(title, img[0].shape, ("- psnr: "+str(round(psnr(img[0],img[1],255.).numpy(),2)) if (title == self.model_name or title == 'Bicubic' ) else " "),
+                    ("- ssim: "+str(round(ssim(img[0],img[1],255.).numpy(),2)) if (title == self.model_name or title == 'Bicubic' ) else " ")))
                     axes[i].set_title("{} - {} {} {}".format(title, img[0].shape, ("- psnr: "+str(round(psnr(img[0],img[1],255.).numpy(),2)) if (title == self.model_name or title == 'Bicubic' ) else " "),
                     ("- ssim: "+str(round(ssim(img[0],img[1],255.).numpy(),2)) if (title == self.model_name or title == 'Bicubic' ) else " ")))
                     axes[i].axis('off')

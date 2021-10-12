@@ -54,15 +54,15 @@ def discriminator_loss(real_output, fake_output):
     noise = 0.05 * tf.random.uniform(tf.shape(real_output))
     real_loss = adv_loss(tf.ones_like(real_output)-noise, real_output)
     fake_loss = adv_loss(tf.zeros_like(fake_output)+noise, fake_output)
-    total_loss = real_loss + fake_loss
+    total_loss = 0.5 * (real_loss + fake_loss)
     return total_loss
 
 def generator_loss(fake_output,img_hr,img_sr):
     noise = 0.05 * tf.random.uniform(tf.shape(fake_output))
-    a_loss = adv_loss(tf.ones_like(fake_output)-noise, fake_output) * lbd
-    c_loss = cont_loss(img_hr,img_sr) * eta
+    a_loss = adv_loss(tf.ones_like(fake_output)-noise, fake_output) 
+    c_loss = cont_loss(img_hr,img_sr) 
     img_hr = tf.keras.layers.Concatenate()([img_hr, img_hr, img_hr])
     img_sr = tf.keras.layers.Concatenate()([img_sr, img_sr, img_sr])
-    p_loss = perc_loss(img_hr,img_sr) * mu
-    total_loss = c_loss + a_loss + p_loss
+    p_loss = perc_loss(img_hr,img_sr) 
+    total_loss = eta * c_loss + lbd * a_loss + mu * p_loss
     return total_loss, c_loss , a_loss , p_loss

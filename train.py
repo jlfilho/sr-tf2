@@ -7,8 +7,9 @@ from models.model_espcn import espcn
 from models.rtsrgan.model_generator import g_rtsrgan 
 from models.rtsrgan.model_discriminator import d_rtsrgan
 from models.ertsrgan.model_generator import g_ertsrgan
-from models.ertsrgan.model_discriminator import d_ertsrgan
-from models.model_gan import GAN
+from models.ertsrgan.model_discriminator import d_ertsrgan,rad_ertsrgan
+from models.rtsrgan.model_gan import GAN
+from models.ertsrgan.model_ragan import RaGAN
 from models.metrics import psnr, ssim, rmse
 from models.save_img_callback import SaveImageCallback
 from models.losses import discriminator_loss, generator_loss
@@ -240,6 +241,9 @@ def main():
             log_dir=args.test_logdir,
             file_writer_cm=file_writer_cm)
 
+        reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='rmse', factor=args.lr_decay_rate,
+                                    patience=args.lr_decay_epochs, mode='min', min_lr=1e-6,verbose=1)
+
         callbacks=[checkpoint_callback,tensorboard_callback,save_img_callback,earlystopping,reduce_lr] 
 
         gan.fit(train_batch, epochs=args.num_epochs,callbacks=callbacks,
@@ -250,16 +254,17 @@ def main():
     if args.model == 'ertsrgan':
         g=g_ertsrgan()
         d=d_ertsrgan()
-        gan = GAN(discriminator = d, generator = g)
-        gan.compile(d_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
-                    g_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
-                    d_loss = discriminator_loss,
+        ra_d=rad_ertsrgan(discriminator=d)
+        ra_gan = RaGAN(ra_discriminator=ra_d, generator=g)
+        ra_gan.compile(d_optimizer=tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
+                    g_optimizer=tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
+                    ra_d_loss=discriminator_loss,
                     g_loss = generator_loss,
                     metrics=[psnr,ssim,rmse])
 
         if (args.load_weights):
             print("Loading weights...")
-            gan.load_weights_gen(args.ckpt_path+'rtvsrsnt/model.ckpt')
+            ra_gan.load_weights_gen(args.ckpt_path+'g_ertsrgan/model.ckpt')
             
         save_img_callback = SaveImageCallback(
             dataset=test_batch,
@@ -269,12 +274,30 @@ def main():
             log_dir=args.test_logdir,
             file_writer_cm=file_writer_cm)
 
+        reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='rmse', factor=args.lr_decay_rate,
+                                    patience=args.lr_decay_epochs, mode='min', min_lr=1e-6,verbose=1)
+
+        earlystopping = tf.keras.callbacks.EarlyStopping(
+            monitor='rmse', 
+            min_delta=1e-5,
+            patience=50, verbose=1,
+            mode='min', 
+            restore_best_weights=True)
+        
+        checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+            filepath=args.ckpt_path+args.model+'/model.ckpt',
+            save_weights_only=True,
+            monitor='rmse',
+            save_freq= 'epoch', 
+            mode='min',
+            save_best_only=True)
+
         callbacks=[checkpoint_callback,tensorboard_callback,save_img_callback,earlystopping,reduce_lr] 
 
-        gan.fit(train_batch, epochs=args.num_epochs,callbacks=callbacks,
+        ra_gan.fit(train_batch, epochs=args.num_epochs,callbacks=callbacks,
         verbose=1,steps_per_epoch=steps_per_epoch)
 
-        gan.save_weights_gen(args.ckpt_path+args.model+'/g_rtvsrgan/model.ckpt')
+        ra_gan.save_weights_gen(args.ckpt_path+args.model+'/g_rtvsrgan/model.ckpt')
     else:
         exit(1)
 

@@ -13,10 +13,10 @@ def espcn(scale_factor=2,file_writer_cm=None):
     net = tf.keras.layers.Conv2D(32, 3, padding='valid',strides=(1, 1), name='conv2',
                                 kernel_initializer=tf.keras.initializers.he_normal())(net)
     net = tf.keras.activations.tanh(net)
-    
     net = tf.keras.layers.Conv2D(scale_factor ** 2, 3,padding='valid',strides=(1, 1), name='final',
                                 kernel_initializer=tf.keras.initializers.he_normal())(net)
     net = tf.keras.layers.Lambda(lambda x:tf.nn.depth_to_space(x,scale_factor),name = 'prediction')(net)
     outputs = tf.keras.activations.sigmoid(net)
-    model = Model(inputs=inputs, outputs=outputs,file_writer_cm=file_writer_cm,name='espcn')
+    model = tf.keras.Model(inputs=inputs, outputs=outputs,name='espcn')
+    #model = Model(inputs=inputs, outputs=outputs,file_writer_cm=file_writer_cm,name='espcn')
     return model

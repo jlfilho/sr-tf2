@@ -42,7 +42,7 @@ adv_loss = tf.keras.losses.BinaryCrossentropy(from_logits=False)
 #cont_loss = tf.keras.losses.Huber()
 cont_loss = tf.keras.losses.MeanSquaredError()
 
-shape_hr = (72,72,3)    
+shape_hr = (36*4,36*4,3)    
 vgg_loss = VGGLossNoActivation(shape_hr)
 perc_loss = vgg_loss.perceptual_loss
 

@@ -96,11 +96,14 @@ def main():
         args.train_dataset_info_path,
         args.shuffle_buffer_size)
 
+    scale_factor = train_dataset.scale_factor
+
     if args.steps_per_epochs == 0:
         steps_per_epoch = train_dataset.examples_num // args.batch_size \
             if train_dataset.examples_num % args.batch_size != 0 else 0
     else:
         steps_per_epoch = args.steps_per_epochs
+    print(steps_per_epoch)
 
 
     train_dataset = train_dataset.get_data(args.num_epochs)
@@ -152,8 +155,8 @@ def main():
         staircase=True)
     
     if args.model == 'espcn':
-        model = espcn(file_writer_cm=file_writer_cm)
-        opt = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipvalue=0.5)#,clipnorm=1.0
+        model = espcn(scale_factor=scale_factor)
+        opt = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0)
         #opt = tf.keras.optimizers.Adam(learning_rate=lr_schedule,clipnorm=1.0)
         loss = tf.keras.losses.MeanSquaredError()
         model.compile(optimizer=opt, loss=loss, metrics=[psnr,ssim,rmse])
@@ -175,7 +178,7 @@ def main():
         verbose=1,steps_per_epoch=steps_per_epoch,validation_data=valid_batch)
     
     if args.model == 'g_rtsrgan':
-        model = g_rtsrgan()
+        model = g_rtsrgan(scale_factor=scale_factor)
         opt = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0)
         loss = tf.keras.losses.MeanSquaredError()
         model.compile(optimizer=opt, loss=loss, metrics=[psnr,ssim,rmse])
@@ -196,7 +199,7 @@ def main():
         verbose=1,steps_per_epoch=steps_per_epoch,validation_data=valid_batch)
     
     if args.model == 'g_ertsrgan':
-        model = g_ertsrgan()
+        model = g_ertsrgan(scale_factor=scale_factor)
         opt = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0) 
         #opt = tf.keras.optimizers.Adam(learning_rate=lr_schedule,clipnorm=1.0)
         loss = tf.keras.losses.MeanSquaredError()
@@ -220,8 +223,8 @@ def main():
         verbose=1,steps_per_epoch=steps_per_epoch,validation_data=valid_batch)
 
     if args.model == 'rtsrgan':
-        g=g_rtsrgan()
-        d=d_rtsrgan()
+        g=g_rtsrgan(scale_factor=scale_factor)
+        d=d_rtsrgan(input_shape=(36*scale_factor,36*scale_factor,1))
         gan = GAN(discriminator = d, generator = g)
         gan.compile(d_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
                     g_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
@@ -252,9 +255,9 @@ def main():
         gan.save_weights_gen(args.ckpt_path+args.model+'/g_rtsrgan/model.ckpt')
 
     if args.model == 'ertsrgan':
-        g=g_ertsrgan()
-        d=d_ertsrgan()
-        ra_d=rad_ertsrgan(discriminator=d)
+        g=g_ertsrgan(scale_factor=scale_factor)
+        d=d_ertsrgan(input_shape=(36*scale_factor,36*scale_factor,1))
+        ra_d=rad_ertsrgan(discriminator=d,shape_hr=(36*scale_factor,36*scale_factor,1))
         ra_gan = RaGAN(ra_discriminator=ra_d, generator=g)
         ra_gan.compile(d_optimizer=tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
                     g_optimizer=tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),

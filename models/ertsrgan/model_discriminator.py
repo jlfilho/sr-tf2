@@ -42,6 +42,8 @@ def rad_ertsrgan(discriminator=None,shape_hr=(72,72,1)):
     # C(Xf)
     fake = discriminator(imgs_sr, training=True)
 
+    
+
     # Relativistic Discriminator
     ra_out = tf.keras.layers.Lambda(comput_Ra, name='Ra_out')([real, fake])
 

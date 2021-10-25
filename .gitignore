@@ -10,7 +10,6 @@ __pycache__/
 *.jpg
 
 # logs
-
 logdir/
 test_logdir/
 
@@ -139,3 +138,4 @@ dmypy.json
 # big dir
 logdir/
 datasets
+checkpoint

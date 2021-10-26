@@ -12,8 +12,9 @@ from models.rtsrgan.model_gan import GAN
 from models.ertsrgan.model_ragan import RaGAN
 from models.metrics import psnr, ssim, rmse
 from models.save_img_callback import SaveImageCallback
-from models.losses import discriminator_loss, generator_loss
 from models.utils import scale_1 as scale
+#from models.losses import discriminator_loss, generator_loss
+from models.losses import VGGLossNoActivation as VGGLoss, GANLoss
 
 
 MODEL='rtvsrgan'
@@ -103,8 +104,6 @@ def main():
             if train_dataset.examples_num % args.batch_size != 0 else 0
     else:
         steps_per_epoch = args.steps_per_epochs
-    print(steps_per_epoch)
-
 
     train_dataset = train_dataset.get_data(args.num_epochs)
     train_batch = train_dataset.map(lambda x0,x1,x2,y: (scale(x1),scale(y)))
@@ -120,8 +119,9 @@ def main():
     test_batch = valid_dataset.map(lambda x0,x1,x2,y: (x1,y))
     test_batch = iter(test_batch).get_next() 
     
+    checkpoint_paph="{}{}_{}x/model.ckpt".format(args.ckpt_path,args.model,scale_factor) 
     checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-        filepath=args.ckpt_path+args.model+'/model.ckpt',
+        filepath=checkpoint_paph,
         save_weights_only=True,
         monitor='val_loss',
         save_freq= 'epoch', 
@@ -162,7 +162,7 @@ def main():
         model.compile(optimizer=opt, loss=loss, metrics=[psnr,ssim,rmse])
         if args.load_weights:
             print("Loading weights...")
-            model.load_weights(args.ckpt_path+args.model+'/model.ckpt')
+            model.load_weights(checkpoint_paph)
         
         save_img_callback = SaveImageCallback(
             dataset=test_batch,
@@ -184,7 +184,7 @@ def main():
         model.compile(optimizer=opt, loss=loss, metrics=[psnr,ssim,rmse])
         if args.load_weights:
             print("Loading weights...")
-            model.load_weights(args.ckpt_path+args.model+'/model.ckpt')
+            model.load_weights(checkpoint_paph)
         
         save_img_callback = SaveImageCallback(
             dataset=test_batch,
@@ -208,7 +208,7 @@ def main():
         model.compile(optimizer=opt, loss=loss, metrics=[psnr,ssim,rmse])
         if args.load_weights:
             print("Loading weights...")
-            model.load_weights(args.ckpt_path+args.model+'/model.ckpt')
+            model.load_weights(checkpoint_paph)
         
         save_img_callback = SaveImageCallback(
             dataset=test_batch,
@@ -226,15 +226,28 @@ def main():
         g=g_rtsrgan(scale_factor=scale_factor)
         d=d_rtsrgan(input_shape=(36*scale_factor,36*scale_factor,1))
         gan = GAN(discriminator = d, generator = g)
+        shape_hr = (36*scale_factor,36*scale_factor,3)    
+        vgg_loss = VGGLoss(shape_hr)
+        #cont_loss = tf.keras.losses.MeanAbsoluteError()
+        #cont_loss = tf.keras.losses.Huber()
+        cont_loss = tf.keras.losses.MeanSquaredError()
+        perc_loss = vgg_loss.perceptual_loss
+        adv_loss = tf.keras.losses.BinaryCrossentropy(from_logits=False)
+        lbd = 1 * 1e-5
+        eta = 1 * 1e-2
+        mu = 1 * 1e-2
+        gan_loss=GANLoss(perc_loss, cont_loss, adv_loss,lbd,eta,mu)
+
         gan.compile(d_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
                     g_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
-                    d_loss = discriminator_loss,
-                    g_loss = generator_loss,
+                    d_loss = gan_loss.discriminator_loss,
+                    g_loss = gan_loss.generator_loss,
                     metrics=[psnr,ssim,rmse])
         
         if (args.load_weights):
             print("Loading weights...")
-            gan.load_weights_gen(args.ckpt_path+'g_rtsrgan/model.ckpt')
+            checkpoint_paph="{}g_rtsrgan_{}x/model.ckpt".format(args.ckpt_path,scale_factor) 
+            gan.load_weights_gen(checkpoint_paph)
             
         save_img_callback = SaveImageCallback(
             dataset=test_batch,
@@ -251,23 +264,39 @@ def main():
 
         gan.fit(train_batch, epochs=args.num_epochs,callbacks=callbacks,
         verbose=1,steps_per_epoch=steps_per_epoch)
-
-        gan.save_weights_gen(args.ckpt_path+args.model+'/g_rtsrgan/model.ckpt')
+        checkpoint_paph="{}{}_{}x/g_rtsrgan/model.ckpt".format(args.ckpt_path,args.model,scale_factor) 
+        gan.save_weights_gen(checkpoint_paph)
 
     if args.model == 'ertsrgan':
         g=g_ertsrgan(scale_factor=scale_factor)
         d=d_ertsrgan(input_shape=(36*scale_factor,36*scale_factor,1))
         ra_d=rad_ertsrgan(discriminator=d,shape_hr=(36*scale_factor,36*scale_factor,1))
         ra_gan = RaGAN(ra_discriminator=ra_d, generator=g)
+        gan = GAN(discriminator = d, generator = g)
+
+        shape_hr = (36*scale_factor,36*scale_factor,3)    
+        vgg_loss = VGGLoss(shape_hr)
+        #cont_loss = tf.keras.losses.MeanAbsoluteError()
+        #cont_loss = tf.keras.losses.Huber()
+        cont_loss = tf.keras.losses.MeanSquaredError()
+        perc_loss = vgg_loss.perceptual_loss
+        adv_loss = tf.keras.losses.BinaryCrossentropy(from_logits=False)
+        lbd = 1 * 1e-5
+        eta = 1 * 1e-2
+        mu = 1 * 1e-2
+        gan_loss=GANLoss(perc_loss, cont_loss, adv_loss,lbd,eta,mu)
+
+
         ra_gan.compile(d_optimizer=tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
                     g_optimizer=tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
-                    ra_d_loss=discriminator_loss,
-                    g_loss = generator_loss,
+                    ra_d_loss=gan_loss.discriminator_loss,
+                    g_loss = gan_loss.generator_loss,
                     metrics=[psnr,ssim,rmse])
 
         if (args.load_weights):
             print("Loading weights...")
-            ra_gan.load_weights_gen(args.ckpt_path+'g_ertsrgan/model.ckpt')
+            checkpoint_paph="{}g_ertsrgan_{}x/model.ckpt".format(args.ckpt_path,scale_factor) 
+            ra_gan.load_weights_gen(checkpoint_paph)
             
         save_img_callback = SaveImageCallback(
             dataset=test_batch,
@@ -286,9 +315,10 @@ def main():
             patience=50, verbose=1,
             mode='min', 
             restore_best_weights=True)
-        
+
+        checkpoint_paph="{}{}_{}x/model.ckpt".format(args.ckpt_path,args.model,scale_factor)
         checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-            filepath=args.ckpt_path+args.model+'/model.ckpt',
+            filepath=checkpoint_paph,
             save_weights_only=True,
             monitor='rmse',
             save_freq= 'epoch', 
@@ -299,8 +329,8 @@ def main():
 
         ra_gan.fit(train_batch, epochs=args.num_epochs,callbacks=callbacks,
         verbose=1,steps_per_epoch=steps_per_epoch)
-
-        ra_gan.save_weights_gen(args.ckpt_path+args.model+'/g_rtvsrgan/model.ckpt')
+        checkpoint_paph="{}{}_{}x/g_ertsrgan/model.ckpt".format(args.ckpt_path,args.model,scale_factor) 
+        ra_gan.save_weights_gen(checkpoint_paph)
     else:
         exit(1)
 

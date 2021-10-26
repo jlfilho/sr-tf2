@@ -2,7 +2,6 @@ import tensorflow as tf
 import numpy as np
 
 
-
 class VGGLossNoActivation(object):
 
     def __init__(self, image_shape):
@@ -37,32 +36,28 @@ class VGGLossNoActivation(object):
         return (alfa * tf.math.reduce_mean(tf.math.square(self.model(self.preprocess_vgg(y_true)) - self.model(self.preprocess_vgg(y_pred))),None) + beta * tf.math.sqrt(tf.math.reduce_sum(tf.math.square(y_pred - y_true), axis=None)))
 
 
-adv_loss = tf.keras.losses.BinaryCrossentropy(from_logits=False)
-#cont_loss = tf.keras.losses.MeanAbsoluteError()
-#cont_loss = tf.keras.losses.Huber()
-cont_loss = tf.keras.losses.MeanSquaredError()
+class GANLoss(object):
+    def __init__(self,perc_loss, cont_loss, adv_loss,lbd,eta,mu):
+        self.perc_loss=perc_loss
+        self.cont_loss=cont_loss
+        self.adv_loss=adv_loss
+        self.lbd=lbd
+        self.eta=eta
+        self.mu=mu   
 
-shape_hr = (36*4,36*4,3)    
-vgg_loss = VGGLossNoActivation(shape_hr)
-perc_loss = vgg_loss.perceptual_loss
+    def discriminator_loss(self,real_output, fake_output):
+        noise = 0.05 * tf.random.uniform(tf.shape(real_output))
+        real_loss = self.adv_loss(tf.ones_like(real_output)-noise, real_output)
+        fake_loss = self.adv_loss(tf.zeros_like(fake_output)+noise, fake_output)
+        total_loss = 0.5 * (real_loss + fake_loss)
+        return total_loss
 
-lbd = 1 * 1e-5
-eta = 1 * 1e-2
-mu = 1 * 1e-2
-
-def discriminator_loss(real_output, fake_output):
-    noise = 0.05 * tf.random.uniform(tf.shape(real_output))
-    real_loss = adv_loss(tf.ones_like(real_output)-noise, real_output)
-    fake_loss = adv_loss(tf.zeros_like(fake_output)+noise, fake_output)
-    total_loss = 0.5 * (real_loss + fake_loss)
-    return total_loss
-
-def generator_loss(fake_output,img_hr,img_sr):
-    noise = 0.05 * tf.random.uniform(tf.shape(fake_output))
-    a_loss = adv_loss(tf.ones_like(fake_output)-noise, fake_output) 
-    c_loss = cont_loss(img_hr,img_sr) 
-    img_hr = tf.keras.layers.Concatenate()([img_hr, img_hr, img_hr])
-    img_sr = tf.keras.layers.Concatenate()([img_sr, img_sr, img_sr])
-    p_loss = perc_loss(img_hr,img_sr) 
-    total_loss = eta * c_loss + lbd * a_loss + mu * p_loss
-    return total_loss, c_loss , a_loss , p_loss
+    def generator_loss(self,fake_output,img_hr,img_sr):
+        noise = 0.05 * tf.random.uniform(tf.shape(fake_output))
+        a_loss = self.adv_loss(tf.ones_like(fake_output)-noise, fake_output) 
+        c_loss = self.cont_loss(img_hr,img_sr) 
+        img_hr = tf.keras.layers.Concatenate()([img_hr, img_hr, img_hr])
+        img_sr = tf.keras.layers.Concatenate()([img_sr, img_sr, img_sr])
+        p_loss = self.perc_loss(img_hr,img_sr) 
+        total_loss = self.eta * c_loss + self.lbd * a_loss + self.mu * p_loss
+        return total_loss, c_loss , a_loss , p_loss

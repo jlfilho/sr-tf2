@@ -6,17 +6,17 @@ from tensorflow.keras.models import Model
 from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 import tensorflow.compat.v1 as tf1
 
-from models.model_espcn import espcn 
-from models.model_rtvsrsnt import rtvsrsnt
+from models.espcn.model_espcn import espcn 
+from models.ertsrgan.model_generator import g_ertsrgan
 
 
 def get_arguments():
-    parser = argparse.ArgumentParser(description='generate binary model file')
-    parser.add_argument('--model', type=str, default='rtvsrgan', choices=['espcn', 'rtvsrgan'],
+    parser = argparse.ArgumentParser(description='Generate binary model file')
+    parser.add_argument('--model', type=str, default='ertsrgan', choices=['espcn', 'ertsrgan'],
                         help='What model to use for generation')
     parser.add_argument('--output_folder', type=str, default='./dnn_bin_models/',
                         help='where to put generated files')
-    parser.add_argument('--ckpt_path', default='./logdir/',
+    parser.add_argument('--ckpt_path', default='./checkpoint/g_ertsrgan/',
                         help='Path to the model checkpoint, from which weights are loaded')
     parser.add_argument('--scale_factor', type=int, default=2, choices=[2, 3, 4],
                         help='What scale factor was used for chosen model')
@@ -66,16 +66,16 @@ def main():
         print("Path to the checkpoint file was not provided")
         exit(1)
 
-    if args.model == 'rtvsrgan':
-        model = rtvsrgan()
+    if args.model == 'ertsrgan':
+        model = g_ertsrgan(scale_factor=args.scale_factor)
         model.load_weights(args.ckpt_path+"model.ckpt")
         print("change_input_shape")
         model = change_input_shape(model,args.model)
         print("write_model")
         write_model(model,args.model,args.output_folder)
     elif args.model == 'espcn':
-        print("MOdel")
-        model = espcn()
+        print("Model")
+        model = espcn(scale_factor=args.scale_factor)
         print("Load weights")
         model.load_weights(args.ckpt_path+"model.ckpt")
         print("change_input_shape")
@@ -87,3 +87,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+

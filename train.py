@@ -3,7 +3,7 @@ import argparse
 import numpy as np
 
 from models.dataset import Dataset
-from models.model_espcn import espcn 
+from models.espcn.model_espcn import espcn 
 from models.rtsrgan.model_generator import g_rtsrgan 
 from models.rtsrgan.model_discriminator import d_rtsrgan
 from models.ertsrgan.model_generator import g_ertsrgan
@@ -13,7 +13,6 @@ from models.ertsrgan.model_ragan import RaGAN
 from models.metrics import psnr, ssim, rmse
 from models.save_img_callback import SaveImageCallback
 from models.utils import scale_1 as scale
-#from models.losses import discriminator_loss, generator_loss
 from models.losses import VGGLossNoActivation as VGGLoss, GANLoss
 
 
@@ -30,6 +29,7 @@ STEPS_PER_EPOCH = 50
 EPOCHS_PER_SAVE = 5
 LOGDIR = 'logdir'
 CHECKPOINT = 'checkpoint/'
+TRAINNABLE_LAYER = 'conv1'
 
 TEST_LOGDIR='test_logdir/'
 
@@ -64,7 +64,13 @@ def get_arguments():
     parser.add_argument('--ckpt_path', default=CHECKPOINT,
                         help='Path to the model checkpoint to evaluate')
     parser.add_argument('--load_weights', action='store_true',
-                        help='Path to the model checkpoint to evaluate')
+                        help='Load weights')
+    parser.add_argument('--transfer_learning', action='store_true',
+                        help='Transfer learning from lower-upscale model')
+    parser.add_argument('--trainable_layer', type=str, default=TRAINNABLE_LAYER,
+                        help='Transfer learning from lower-upscale model')
+    parser.add_argument('--scaleFrom', type=int, default=2,
+                        help='Perform transfer learning from lower-upscale model' )
     parser.add_argument('--shuffle_buffer_size', type=int, default=SHUFFLE_BUFFER_SIZE,
                         help='Buffer size used for shuffling examples in dataset')
     parser.add_argument('--learning_rate', type=float, default=LEARNING_RATE,
@@ -85,6 +91,7 @@ def get_arguments():
                         help='Where to save tests images')
 
     return parser.parse_args()
+
 
 
 
@@ -154,185 +161,291 @@ def main():
         decay_rate=0.1,
         staircase=True)
     
-    if args.model == 'espcn':
-        model = espcn(scale_factor=scale_factor)
-        opt = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0)
-        #opt = tf.keras.optimizers.Adam(learning_rate=lr_schedule,clipnorm=1.0)
-        loss = tf.keras.losses.MeanSquaredError()
-        model.compile(optimizer=opt, loss=loss, metrics=[psnr,ssim,rmse])
-        if args.load_weights:
-            print("Loading weights...")
-            model.load_weights(checkpoint_paph)
-        
-        save_img_callback = SaveImageCallback(
-            dataset=test_batch,
-            model=model,
-            model_name=args.model,
-            epochs_per_save=args.epochs_per_save,
-            log_dir=args.test_logdir,
-            file_writer_cm=file_writer_cm)
-
-        callbacks=[checkpoint_callback,tensorboard_callback,save_img_callback,earlystopping,reduce_lr] 
-
-        model.fit(train_batch,epochs=args.num_epochs,callbacks=callbacks,
-        verbose=1,steps_per_epoch=steps_per_epoch,validation_data=valid_batch)
+    if args.model == 'espcn':    
+        callbacks=[checkpoint_callback,tensorboard_callback,earlystopping,reduce_lr] 
+        train_espcn(train_batch,steps_per_epoch,test_batch,valid_batch,scale_factor,args,callbacks,checkpoint_paph,file_writer_cm,trainable_layer=args.trainable_layer)
     
     if args.model == 'g_rtsrgan':
-        model = g_rtsrgan(scale_factor=scale_factor)
-        opt = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0)
-        loss = tf.keras.losses.MeanSquaredError()
-        model.compile(optimizer=opt, loss=loss, metrics=[psnr,ssim,rmse])
-        if args.load_weights:
-            print("Loading weights...")
-            model.load_weights(checkpoint_paph)
-        
-        save_img_callback = SaveImageCallback(
-            dataset=test_batch,
-            model=model,
-            model_name=args.model,
-            epochs_per_save=args.epochs_per_save,
-            log_dir=args.test_logdir,
-            file_writer_cm=file_writer_cm)
+        callbacks=[checkpoint_callback,tensorboard_callback,earlystopping,reduce_lr] 
+        train_g_rtsrgan(train_batch,steps_per_epoch,test_batch,valid_batch,scale_factor,args,callbacks,checkpoint_paph,file_writer_cm,trainable_layer=args.trainable_layer)
 
-        callbacks=[checkpoint_callback,tensorboard_callback,save_img_callback,earlystopping,reduce_lr]
-        model.fit(train_batch,epochs=args.num_epochs,callbacks=callbacks,
-        verbose=1,steps_per_epoch=steps_per_epoch,validation_data=valid_batch)
-    
     if args.model == 'g_ertsrgan':
-        model = g_ertsrgan(scale_factor=scale_factor)
-        opt = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0) 
-        #opt = tf.keras.optimizers.Adam(learning_rate=lr_schedule,clipnorm=1.0)
-        loss = tf.keras.losses.MeanSquaredError()
-        #loss = tf.keras.losses.MeanAbsoluteError()
-        #loss = tf.keras.losses.Huber()
-        model.compile(optimizer=opt, loss=loss, metrics=[psnr,ssim,rmse])
-        if args.load_weights:
-            print("Loading weights...")
-            model.load_weights(checkpoint_paph)
-        
-        save_img_callback = SaveImageCallback(
-            dataset=test_batch,
-            model=model,
-            model_name=args.model,
-            epochs_per_save=args.epochs_per_save,
-            log_dir=args.test_logdir,
-            file_writer_cm=file_writer_cm)
-
-        callbacks=[checkpoint_callback,tensorboard_callback,save_img_callback,earlystopping,reduce_lr]
-        model.fit(train_batch,epochs=args.num_epochs,callbacks=callbacks,
-        verbose=1,steps_per_epoch=steps_per_epoch,validation_data=valid_batch)
+        callbacks=[checkpoint_callback,tensorboard_callback,earlystopping,reduce_lr] 
+        train_g_ertsrgan(train_batch,steps_per_epoch,test_batch,valid_batch,scale_factor,args,callbacks,checkpoint_paph,file_writer_cm,trainable_layer=args.trainable_layer)
 
     if args.model == 'rtsrgan':
-        g=g_rtsrgan(scale_factor=scale_factor)
-        d=d_rtsrgan(input_shape=(36*scale_factor,36*scale_factor,1))
-        gan = GAN(discriminator = d, generator = g)
-        shape_hr = (36*scale_factor,36*scale_factor,3)    
-        vgg_loss = VGGLoss(shape_hr)
-        #cont_loss = tf.keras.losses.MeanAbsoluteError()
-        #cont_loss = tf.keras.losses.Huber()
-        cont_loss = tf.keras.losses.MeanSquaredError()
-        perc_loss = vgg_loss.perceptual_loss
-        adv_loss = tf.keras.losses.BinaryCrossentropy(from_logits=False)
-        lbd = 1 * 1e-5
-        eta = 1 * 1e-2
-        mu = 1 * 1e-2
-        gan_loss=GANLoss(perc_loss, cont_loss, adv_loss,lbd,eta,mu)
-
-        gan.compile(d_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
-                    g_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
-                    d_loss = gan_loss.discriminator_loss,
-                    g_loss = gan_loss.generator_loss,
-                    metrics=[psnr,ssim,rmse])
-        
-        if (args.load_weights):
-            print("Loading weights...")
-            checkpoint_paph="{}g_rtsrgan_{}x/model.ckpt".format(args.ckpt_path,scale_factor) 
-            gan.load_weights_gen(checkpoint_paph)
-            
-        save_img_callback = SaveImageCallback(
-            dataset=test_batch,
-            model=g,
-            model_name=args.model,
-            epochs_per_save=args.epochs_per_save,
-            log_dir=args.test_logdir,
-            file_writer_cm=file_writer_cm)
-
-        reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='rmse', factor=args.lr_decay_rate,
-                                    patience=args.lr_decay_epochs, mode='min', min_lr=1e-6,verbose=1)
-
-        callbacks=[checkpoint_callback,tensorboard_callback,save_img_callback,earlystopping,reduce_lr] 
-
-        gan.fit(train_batch, epochs=args.num_epochs,callbacks=callbacks,
-        verbose=1,steps_per_epoch=steps_per_epoch)
-        checkpoint_paph="{}{}_{}x/g_rtsrgan/model.ckpt".format(args.ckpt_path,args.model,scale_factor) 
-        gan.save_weights_gen(checkpoint_paph)
+        callbacks=[tensorboard_callback]
+        train_rtsrgan(train_batch,steps_per_epoch,test_batch,valid_batch,scale_factor,args,callbacks,checkpoint_paph,file_writer_cm,trainable_layer=args.trainable_layer)
 
     if args.model == 'ertsrgan':
-        g=g_ertsrgan(scale_factor=scale_factor)
-        d=d_ertsrgan(input_shape=(36*scale_factor,36*scale_factor,1))
-        ra_d=rad_ertsrgan(discriminator=d,shape_hr=(36*scale_factor,36*scale_factor,1))
-        ra_gan = RaGAN(ra_discriminator=ra_d, generator=g)
-        gan = GAN(discriminator = d, generator = g)
-
-        shape_hr = (36*scale_factor,36*scale_factor,3)    
-        vgg_loss = VGGLoss(shape_hr)
-        #cont_loss = tf.keras.losses.MeanAbsoluteError()
-        #cont_loss = tf.keras.losses.Huber()
-        cont_loss = tf.keras.losses.MeanSquaredError()
-        perc_loss = vgg_loss.perceptual_loss
-        adv_loss = tf.keras.losses.BinaryCrossentropy(from_logits=False)
-        lbd = 1 * 1e-5
-        eta = 1 * 1e-2
-        mu = 1 * 1e-2
-        gan_loss=GANLoss(perc_loss, cont_loss, adv_loss,lbd,eta,mu)
-
-
-        ra_gan.compile(d_optimizer=tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
-                    g_optimizer=tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
-                    ra_d_loss=gan_loss.discriminator_loss,
-                    g_loss = gan_loss.generator_loss,
-                    metrics=[psnr,ssim,rmse])
-
-        if (args.load_weights):
-            print("Loading weights...")
-            checkpoint_paph="{}g_ertsrgan_{}x/model.ckpt".format(args.ckpt_path,scale_factor) 
-            ra_gan.load_weights_gen(checkpoint_paph)
-            
-        save_img_callback = SaveImageCallback(
-            dataset=test_batch,
-            model=g,
-            model_name=args.model,
-            epochs_per_save=args.epochs_per_save,
-            log_dir=args.test_logdir,
-            file_writer_cm=file_writer_cm)
-
-        reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='rmse', factor=args.lr_decay_rate,
-                                    patience=args.lr_decay_epochs, mode='min', min_lr=1e-6,verbose=1)
-
-        earlystopping = tf.keras.callbacks.EarlyStopping(
-            monitor='rmse', 
-            min_delta=1e-5,
-            patience=50, verbose=1,
-            mode='min', 
-            restore_best_weights=True)
-
-        checkpoint_paph="{}{}_{}x/model.ckpt".format(args.ckpt_path,args.model,scale_factor)
-        checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-            filepath=checkpoint_paph,
-            save_weights_only=True,
-            monitor='rmse',
-            save_freq= 'epoch', 
-            mode='min',
-            save_best_only=True)
-
-        callbacks=[checkpoint_callback,tensorboard_callback,save_img_callback,earlystopping,reduce_lr] 
-
-        ra_gan.fit(train_batch, epochs=args.num_epochs,callbacks=callbacks,
-        verbose=1,steps_per_epoch=steps_per_epoch)
-        checkpoint_paph="{}{}_{}x/g_ertsrgan/model.ckpt".format(args.ckpt_path,args.model,scale_factor) 
-        ra_gan.save_weights_gen(checkpoint_paph)
+        callbacks=[tensorboard_callback]
+        train_ertsrgan(train_batch,steps_per_epoch,test_batch,valid_batch,scale_factor,args,callbacks,checkpoint_paph,file_writer_cm,trainable_layer=args.trainable_layer)
+       
     else:
         exit(1)
+
+
+def trainable_weights(model):
+    print("Weights:", len(model.weights))
+    print("Trainable_weights:", len(model.trainable_weights))
+    print("Non_trainable_weights:", len(model.non_trainable_weights))
+
+def train_espcn(train_batch,steps_per_epoch,test_batch,valid_batch,scale_factor,args,callbacks,checkpoint_paph,
+                file_writer_cm,trainable_layer):
+    model = espcn(scale_factor=scale_factor)
+    if args.load_weights:
+        print("Loading weights...")
+        model.load_weights(checkpoint_paph)
+    if args.transfer_learning:
+        checkpoint_paph_from="{}{}_{}x/model.ckpt".format("checkpoint/",args.model,args.scaleFrom)
+        print("Transfer learning from {}x-upscale model...".format(args.scaleFrom))
+        modelFrom = espcn(scale_factor=args.scaleFrom)
+        modelFrom.load_weights(checkpoint_paph_from)
+        for i in range(len(modelFrom.layers)):
+            if(modelFrom.layers[i].name == trainable_layer):
+                break
+            else:
+                print("Set_weights in: {} layer".format(model.layers[i].name))
+                model.layers[i].set_weights(modelFrom.layers[i].get_weights())
+                model.layers[i].trainable=False
+    
+    opt = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0)
+    loss = tf.keras.losses.MeanSquaredError()
+    model.compile(optimizer=opt, loss=loss, metrics=[psnr,ssim,rmse])
+    trainable_weights(model)
+
+    
+    save_img_callback = SaveImageCallback(
+        dataset=test_batch,
+        model=model,
+        model_name=args.model,
+        epochs_per_save=args.epochs_per_save,
+        log_dir=args.test_logdir,
+        file_writer_cm=file_writer_cm)
+
+    callbacks.append(save_img_callback)
+
+    model.fit(train_batch,epochs=args.num_epochs,callbacks=callbacks,
+    verbose=1,steps_per_epoch=steps_per_epoch,validation_data=valid_batch)
+
+def train_g_rtsrgan(train_batch,steps_per_epoch,test_batch,valid_batch,scale_factor,args,callbacks,checkpoint_paph,
+                file_writer_cm,trainable_layer):
+    model = g_rtsrgan(scale_factor=scale_factor)
+    if args.load_weights:
+        print("Loading weights...")
+        model.load_weights(checkpoint_paph)
+    if args.transfer_learning:
+        checkpoint_paph_from="{}{}_{}x/model.ckpt".format("checkpoint/",args.model,args.scaleFrom)
+        print("Transfer learning from {}x-upscale model...".format(args.scaleFrom))
+        modelFrom = g_rtsrgan(scale_factor=args.scaleFrom)
+        modelFrom.load_weights(checkpoint_paph_from)
+        for i in range(len(modelFrom.layers)):
+            if(modelFrom.layers[i].name == trainable_layer):
+                break
+            else:
+                print("Set_weights in: {} layer".format(model.layers[i].name))
+                model.layers[i].set_weights(modelFrom.layers[i].get_weights())
+                model.layers[i].trainable=False
+    
+    opt = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0)
+    loss = tf.keras.losses.MeanSquaredError()
+    model.compile(optimizer=opt, loss=loss, metrics=[psnr,ssim,rmse])
+    trainable_weights(model)
+
+    
+    save_img_callback = SaveImageCallback(
+        dataset=test_batch,
+        model=model,
+        model_name=args.model,
+        epochs_per_save=args.epochs_per_save,
+        log_dir=args.test_logdir,
+        file_writer_cm=file_writer_cm)
+
+    callbacks.append(save_img_callback)
+
+    model.fit(train_batch,epochs=args.num_epochs,callbacks=callbacks,
+    verbose=1,steps_per_epoch=steps_per_epoch,validation_data=valid_batch)
+
+
+def train_g_ertsrgan(train_batch,steps_per_epoch,test_batch,valid_batch,scale_factor,args,callbacks,checkpoint_paph,file_writer_cm,trainable_layer):
+    model = g_ertsrgan(scale_factor=scale_factor)
+    if args.load_weights:
+        print("Loading weights...")
+        model.load_weights(checkpoint_paph)
+    if args.transfer_learning:
+        checkpoint_paph_from="{}{}_{}x/model.ckpt".format("checkpoint/",args.model,args.scaleFrom)
+        print("Transfer learning from {}x-upscale model...".format(args.scaleFrom))
+        modelFrom = g_ertsrgan(scale_factor=args.scaleFrom)
+        modelFrom.load_weights(checkpoint_paph_from)
+        for i in range(len(modelFrom.layers)):
+            if(modelFrom.layers[i].name == trainable_layer):
+                break
+            else:
+                print("Set_weights in: {} layer".format(model.layers[i].name))
+                model.layers[i].set_weights(modelFrom.layers[i].get_weights())
+                model.layers[i].trainable=False
+    
+    opt = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0)
+    loss = tf.keras.losses.MeanSquaredError()
+    #loss = tf.keras.losses.MeanAbsoluteError()
+    #loss = tf.keras.losses.Huber()
+    model.compile(optimizer=opt, loss=loss, metrics=[psnr,ssim,rmse])
+    trainable_weights(model)
+   
+    save_img_callback = SaveImageCallback(
+        dataset=test_batch,
+        model=model,
+        model_name=args.model,
+        epochs_per_save=args.epochs_per_save,
+        log_dir=args.test_logdir,
+        file_writer_cm=file_writer_cm)
+
+    callbacks.append(save_img_callback)
+
+    model.fit(train_batch,epochs=args.num_epochs,callbacks=callbacks,
+    verbose=1,steps_per_epoch=steps_per_epoch,validation_data=valid_batch)
+
+
+def train_rtsrgan(train_batch,steps_per_epoch,test_batch,valid_batch,scale_factor,args,callbacks,checkpoint_paph,file_writer_cm,trainable_layer):
+    g=g_rtsrgan(scale_factor=scale_factor)
+    d=d_rtsrgan(input_shape=(36*scale_factor,36*scale_factor,1))
+    gan = GAN(discriminator = d, generator = g)
+    shape_hr = (36*scale_factor,36*scale_factor,3)    
+    vgg_loss = VGGLoss(shape_hr)
+    #cont_loss = tf.keras.losses.MeanAbsoluteError()
+    #cont_loss = tf.keras.losses.Huber()
+    cont_loss = tf.keras.losses.MeanSquaredError()
+    perc_loss = vgg_loss.perceptual_loss
+    adv_loss = tf.keras.losses.BinaryCrossentropy(from_logits=False)
+    lbd = 1 * 1e-5
+    eta = 1 * 1e-2
+    mu = 1 * 1e-2
+    gan_loss=GANLoss(perc_loss, cont_loss, adv_loss,lbd,eta,mu)
+        
+    if (args.load_weights):
+        print("Loading weights...")
+        checkpoint_paph="{}g_rtsrgan_{}x/model.ckpt".format(args.ckpt_path,scale_factor) 
+        gan.load_weights_gen(checkpoint_paph)
+        for i in range(len(g.layers)):
+            if(g.layers[i].name == trainable_layer):
+                break
+            else:
+                g.layers[i].trainable=False
+    
+    gan.compile(d_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
+                g_optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
+                d_loss = gan_loss.discriminator_loss,
+                g_loss = gan_loss.generator_loss,
+                metrics=[psnr,ssim,rmse])
+    trainable_weights(gan)
+            
+    save_img_callback = SaveImageCallback(
+        dataset=test_batch,
+        model=g,
+        model_name=args.model,
+        epochs_per_save=args.epochs_per_save,
+        log_dir=args.test_logdir,
+        file_writer_cm=file_writer_cm)
+    callbacks.append(save_img_callback)
+
+    earlystopping = tf.keras.callbacks.EarlyStopping(
+        monitor='rmse', 
+        min_delta=1e-5,
+        patience=50, verbose=1,
+        mode='min', 
+        restore_best_weights=True)
+    callbacks.append(earlystopping)
+
+    checkpoint_paph="{}{}_{}x/model.ckpt".format(args.ckpt_path,args.model,scale_factor)
+    checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+        filepath=checkpoint_paph,
+        save_weights_only=True,
+        monitor='rmse',
+        save_freq= 'epoch', 
+        mode='min',
+        save_best_only=True)
+    callbacks.append(checkpoint_callback)
+
+    reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='rmse', factor=args.lr_decay_rate,patience=args.lr_decay_epochs, mode='min', min_lr=1e-6,verbose=1)
+    callbacks.append(reduce_lr) 
+
+    gan.fit(train_batch, epochs=args.num_epochs,callbacks=callbacks,verbose=1,steps_per_epoch=steps_per_epoch)#,validation_data=valid_batch
+    checkpoint_paph="{}{}_{}x/g_rtsrgan/model.ckpt".format(args.ckpt_path,args.model,scale_factor) 
+    gan.save_weights_gen(checkpoint_paph)
+
+
+
+
+def train_ertsrgan(train_batch,steps_per_epoch,test_batch,valid_batch,scale_factor,args,callbacks,checkpoint_paph,file_writer_cm,trainable_layer):
+    g=g_ertsrgan(scale_factor=scale_factor)
+    d=d_ertsrgan(input_shape=(36*scale_factor,36*scale_factor,1))
+    ra_d=rad_ertsrgan(discriminator=d,shape_hr=(36*scale_factor,36*scale_factor,1))
+    ra_gan = RaGAN(ra_discriminator=ra_d, generator=g)
+    
+
+    shape_hr = (36*scale_factor,36*scale_factor,3)    
+    vgg_loss = VGGLoss(shape_hr)
+    #cont_loss = tf.keras.losses.MeanAbsoluteError()
+    #cont_loss = tf.keras.losses.Huber()
+    cont_loss = tf.keras.losses.MeanSquaredError()
+    perc_loss = vgg_loss.perceptual_loss
+    adv_loss = tf.keras.losses.BinaryCrossentropy(from_logits=False)
+    lbd = 1 * 1e-5
+    eta = 1 * 1e-2
+    mu = 1 * 1e-2
+    gan_loss=GANLoss(perc_loss, cont_loss, adv_loss,lbd,eta,mu)
+
+
+    ra_gan.compile(d_optimizer=tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
+                g_optimizer=tf.keras.optimizers.Adam(learning_rate=args.learning_rate,clipnorm=1.0),
+                ra_d_loss=gan_loss.discriminator_loss,
+                g_loss = gan_loss.generator_loss,
+                metrics=[psnr,ssim,rmse])
+    trainable_weights(ra_gan)
+
+    if (args.load_weights):
+        print("Loading weights...")
+        checkpoint_paph="{}g_ertsrgan_{}x/model.ckpt".format(args.ckpt_path,scale_factor) 
+        ra_gan.load_weights_gen(checkpoint_paph)
+        for i in range(len(g.layers)):
+            if(g.layers[i].name == trainable_layer):
+                break
+            else:
+                g.layers[i].trainable=False
+                
+    save_img_callback = SaveImageCallback(
+        dataset=test_batch,
+        model=g,
+        model_name=args.model,
+        epochs_per_save=args.epochs_per_save,
+        log_dir=args.test_logdir,
+        file_writer_cm=file_writer_cm)
+    callbacks.append(save_img_callback)
+
+    reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='rmse', factor=args.lr_decay_rate, patience=args.lr_decay_epochs, mode='min', min_lr=1e-6,verbose=1)
+    callbacks.append(reduce_lr)
+
+    earlystopping = tf.keras.callbacks.EarlyStopping(
+        monitor='rmse', 
+        min_delta=1e-5,
+        patience=50, verbose=1,
+        mode='min', 
+        restore_best_weights=True)
+    callbacks.append(earlystopping)
+
+    checkpoint_paph="{}{}_{}x/model.ckpt".format(args.ckpt_path,args.model,scale_factor)
+    checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+        filepath=checkpoint_paph,
+        save_weights_only=True,
+        monitor='rmse',
+        save_freq= 'epoch', 
+        mode='min',
+        save_best_only=True)
+    callbacks.append(checkpoint_callback)
+
+    ra_gan.fit(train_batch, epochs=args.num_epochs,callbacks=callbacks,verbose=1,steps_per_epoch=steps_per_epoch,validation_data=valid_batch)
+    checkpoint_paph="{}{}_{}x/g_ertsrgan/model.ckpt".format(args.ckpt_path,args.model,scale_factor) 
+    ra_gan.save_weights_gen(checkpoint_paph)
 
 
 if __name__ == '__main__':

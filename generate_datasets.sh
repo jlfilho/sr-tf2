@@ -15,5 +15,15 @@ tail -n +2 datasets/train/dataset_info.txt >> datasets/train_merged/dataset_info
 
 
 # generate dataset to train and test with video
+#2x
+python3 datasets/prepare_dataset.py --video_folder=datasets/loaded_harmonic/train/ --dataset_folder=datasets/train/2x --scale_factor=2 --type=blocks --temporal_radius=1 --frames_per_scene=4 --block_size=36 --stride=36 --crop --scene_changes=datasets/scene_changes_harmonic.json --block_min_std=20.0
+python3 datasets/prepare_dataset.py --video_folder=datasets/loaded_harmonic/test/ --dataset_folder=datasets/test/2x --scale_factor=2 --type=full --temporal_radius=1 --frames_per_scene=4 --scene_changes=datasets/scene_changes_harmonic_test.json 
+
+#3x
+python3 datasets/prepare_dataset.py --video_folder=datasets/loaded_harmonic/train/ --dataset_folder=datasets/train/3x --scale_factor=3 --type=blocks --temporal_radius=1 --frames_per_scene=4 --block_size=36 --stride=36 --crop --scene_changes=datasets/scene_changes_harmonic.json --block_min_std=20.0
+python3 datasets/prepare_dataset.py --video_folder=datasets/loaded_harmonic/test/ --dataset_folder=datasets/test/3x --scale_factor=3 --type=full --temporal_radius=1 --frames_per_scene=4 --scene_changes=datasets/scene_changes_harmonic_test.json 
+
+
+#4x
 python3 datasets/prepare_dataset.py --video_folder=datasets/loaded_harmonic/train/ --dataset_folder=datasets/train --scale_factor=4 --type=blocks --temporal_radius=1 --frames_per_scene=4 --block_size=36 --stride=36 --crop --scene_changes=datasets/scene_changes_harmonic.json --block_min_std=20.0
 python3 datasets/prepare_dataset.py --video_folder=datasets/loaded_harmonic/test/ --dataset_folder=datasets/test --scale_factor=4 --type=full --temporal_radius=1 --frames_per_scene=4 --scene_changes=datasets/scene_changes_harmonic_test.json 

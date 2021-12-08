@@ -8,25 +8,29 @@ from models.dataset import Dataset
 from models.metrics import psnr, ssim
 from models.utils import scale_1 as scale
 from models.utils import unscale_1 as unscale
+from models.utils import plot_test_images
 
 
 tnp.experimental_enable_numpy_behavior()
 
 class SaveImageCallback(tf.keras.callbacks.Callback):
-    def __init__(self, model=None,model_name=None,
-    epochs_per_save=1,log_dir=None,dataset=None,file_writer_cm=None):
+    def __init__(self, model=None,model_name=None,epochs_per_save=1,lr_paths=None,hr_paths=None,log_dir=None,file_writer_cm=None,scale_factor=2):
         super(SaveImageCallback, self).__init__()
-        self.data_batch = dataset
         self._model = model
+        self.scale_factor = scale_factor
         self.model_name = model_name
+        self.lr_paths=lr_paths
+        self.hr_paths=hr_paths
         self.logdir = log_dir
         self.epochs_per_save = epochs_per_save
         self.file_writer_cm = file_writer_cm
 
     def on_epoch_end(self, epoch,logs=None):
         if ((epoch+1) % self.epochs_per_save == 0):
-            batch = self.data_batch
-            self.plot_test_images(batch, epoch+1)
+            plot_test_images(self._model,self.lr_paths,self.hr_paths,
+             self.logdir,scale_factor=self.scale_factor,model_name=self.model_name,epoch=epoch)
+            # batch = self.data_batch
+            # self.plot_test_images(batch, epoch+1)
     
     def predict(self,img):
         img_sr=np.squeeze(self._model.predict(

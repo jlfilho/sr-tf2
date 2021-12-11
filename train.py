@@ -25,9 +25,10 @@ VAL_BATCH_SIZE = 16
 TEST_BATCH_SIZE = 4
 SHUFFLE_BUFFER_SIZE = 64
 OPTIMIZER='adam'
+TYPE_REDUCE_LR='OnPlateau'
 LEARNING_RATE = 1e-4
 LEARNING_DECAY_RATE = 1e-1
-LEARNING_DECAY_EPOCHS = 10
+LEARNING_DECAY_EPOCHS = 20
 NUM_EPOCHS = 100
 STEPS_PER_EPOCH = 100
 VAL_STEPS = 1
@@ -111,6 +112,9 @@ def get_arguments():
                         help='Learning rate decay rate used in exponential decay')
     parser.add_argument('--lr_decay_epochs', type=int, default=LEARNING_DECAY_EPOCHS,
                         help='Number of epochs before full decay rate tick used in exponential decay')
+
+    parser.add_argument('--type_reduce_lr', type=str, default=TYPE_REDUCE_LR, choices=['plateau','schedules'],
+                        help='Type of reduce learning rate')
     
     parser.add_argument('--epochs_per_save', type=int, default=EPOCHS_PER_SAVE,
                         help='How often to save checkpoints')
@@ -202,19 +206,21 @@ def main():
     earlystopping = tf.keras.callbacks.EarlyStopping(
             monitor='val_loss', 
             min_delta=1e-5,
-            patience=50, verbose=1,
+            patience=100, verbose=1,
             mode='min', 
             restore_best_weights=True)
     
-    reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_rmse', factor=args.lr_decay_rate,
-                                    patience=args.lr_decay_epochs, mode='min', min_lr=1e-6,verbose=1)
-    
-    initial_learning_rate = 1e-2
-    lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-        initial_learning_rate,
-        decay_steps=1000,
-        decay_rate=0.1,
-        staircase=True)
+    if args.type_reduce_lr == 'plateau':
+        reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_rmse', factor=args.lr_decay_rate,
+                                        patience=args.lr_decay_epochs, mode='min', min_lr=1e-6,verbose=1)
+    if args.type_reduce_lr == 'schedules':
+        def scheduler(epoch, lr):
+            if epoch in [100,150]:
+                return lr * tf.math.exp(-0.1)
+            else:
+                return lr
+
+        reduce_lr=tf.keras.callbacks.LearningRateScheduler(scheduler)
     
     if args.model == 'espcn':    
         callbacks=[checkpoint_callback,tensorboard_callback,earlystopping,reduce_lr] 

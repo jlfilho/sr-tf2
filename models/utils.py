@@ -84,7 +84,8 @@ def plot_results(images, logdir_path, scale_factor=2,model_name=None,epoch=None,
         # Apply the x-limits.
         axins.set_xlim(x1, x2)
         # Apply the y-limits.
-        axins.set_ylim(y1, y2)
+        axins.set_ylim(y2, y1)
+    
         plt.yticks(visible=False)
         plt.xticks(visible=False)
         # Make the line.

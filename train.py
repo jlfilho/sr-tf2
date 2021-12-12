@@ -5,7 +5,7 @@ import sys
 import os
 
 from models.dataset import Dataset
-from models.espcn.model_espcn import espcn 
+from models.espcn.model_espcn import ESPCN 
 from models.rtsrgan.model_generator import g_rtsrgan 
 from models.rtsrgan.model_discriminator import d_rtsrgan
 from models.ertsrgan.model_generator import g_ertsrgan
@@ -270,7 +270,8 @@ def print_eval(file_stats,eval,model_name):
 
 def train_espcn(train_batch,steps_per_epoch, validation_steps,val_batch, test_batch, test_steps, test_print, scale_factor,args,callbacks,checkpoint_paph,
                 file_writer_cm,trainable_layer):
-    model = espcn(scale_factor=scale_factor)
+    #model = espcn(scale_factor=scale_factor)
+    model = ESPCN(scale_factor=scale_factor)
     if args.load_weights:
         print("Loading weights...")
         model.load_weights(checkpoint_paph)

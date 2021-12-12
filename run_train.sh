@@ -82,6 +82,32 @@
 # python train.py --model ertsrgan --train_dataset_info_path datasets/train/4x/dataset_info.txt --train_dataset_path datasets/train/4x/dataset.tfrecords --valid_dataset_info_path datasets/test/4x/dataset_info.txt --valid_dataset_path datasets/test/4x/dataset.tfrecords --batch_size 32 --learning_rate 1e-4 --lr_decay_epochs 20 --num_epochs 10 --steps_per_epochs 100 --epochs_per_save 5 --load_weights
 
 
+
+
+python3 train.py --model espcn \
+--train_dataset_info_path datasets/loaded_harmonic/output/train/3X/270p_qp28/dataset_info.txt \
+--train_dataset_path datasets/loaded_harmonic/output/train/3X/270p_qp28/dataset.tfrecords \
+--val_dataset_info_path datasets/loaded_harmonic/output/val/3X/270p_qp28/dataset_info.txt \
+--val_dataset_path datasets/loaded_harmonic/output/val/3X/270p_qp28/dataset.tfrecords \
+--test_dataset_info_path datasets/loaded_harmonic/output/test/3X/270p_qp28/dataset_info.txt \
+--test_dataset_path datasets/loaded_harmonic/output/test/3X/270p_qp28/dataset.tfrecords \
+--lr_hot_test_path datasets/loaded_harmonic/img_hot_test/lr/270p_qp28/ \
+--hr_hot_test_path datasets/loaded_harmonic/img_hot_test/hr/810p/ \
+--test_logdir  test_logdir/tmp/ \
+--logdir logdir/tmp/ \
+--ckpt_path checkpoint/tmp/ \
+--path_to_eval test_logdir/tmp/stats.txt \
+--hot_test_size 8 \
+--batch_size 32 \
+--learning_rate 1e-3 \
+--lr_decay_epochs 20 \
+--type_reduce_lr schedules \
+--num_epochs 200 \
+--steps_per_epoch 100 \
+--epochs_per_save 30
+
+
+
 # ESPCN Train 3x
 python3 train.py --model espcn \
 --train_dataset_info_path datasets/loaded_harmonic/output/train/3X/270p_qp28/dataset_info.txt \

@@ -7,8 +7,8 @@ def g_ertsrgan(scale_factor=2):
     net = tf.pad(inputs, [[0, 0], [0, 0], [0, 0], [0, 0]], 'SYMMETRIC')
     net = tf.keras.layers.Conv2D(32, 3,padding='same',strides=(1, 1), name='conv1',
                                 kernel_initializer=tf.keras.initializers.VarianceScaling(scale=1., 
-                                   mode='fan_in', distribution='truncated_normal', seed=None))(net)
-    net = tf.keras.layers.LeakyReLU(alpha=0.2)(net)
+                                   mode='fan_in', distribution='truncated_normal', seed=None))(net)[-1,34,34,1]
+    net = tf.keras.layers.LeakyReLU(alpha=0.2)(net) [-1,34,34,32]
     net1 = net
     net = tf.keras.layers.Conv2D(32, 3,padding='same',strides=(1, 1), name='conv2',
                                 kernel_initializer=tf.keras.initializers.VarianceScaling(scale=1., 

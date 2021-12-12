@@ -61,3 +61,7 @@ class GANLoss(object):
         p_loss = self.perc_loss(img_hr,img_sr) 
         total_loss = self.eta * c_loss + self.lbd * a_loss + self.mu * p_loss
         return total_loss, c_loss , a_loss , p_loss
+    
+
+def charbonnier_loss(y_true, y_pred):
+    return tf.reduce_mean(tf.sqrt(tf.square(y_true - y_pred) + tf.square(1e-3)))

@@ -29,7 +29,7 @@ class SaveImageCallback(tf.keras.callbacks.Callback):
         if ((epoch+1) % self.epochs_per_save == 0):
             time_elapsed = plot_test_images(self._model,self.lr_paths,self.hr_paths,
              self.logdir,scale_factor=self.scale_factor,model_name=self.model_name,epoch=epoch+1)
-            self.model.time.extend(time_elapsed) 
+            self._model.time.extend(time_elapsed) 
             # batch = self.data_batch
             # self.plot_test_images(batch, epoch+1)
     

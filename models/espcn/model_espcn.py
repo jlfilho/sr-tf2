@@ -1,5 +1,4 @@
 import tensorflow as tf
-from models.Model import Model
 
 # def espcn(channels=1,scale_factor=2,file_writer_cm=None):   
 #     inputs = tf.keras.layers.Input(shape=(None,None,1),name='input')
@@ -30,7 +29,16 @@ class ESPCN(tf.keras.Model):
         self.conv2 = tf.keras.layers.Conv2D(32, 3, padding='valid',strides=(1, 1), name='conv2', activation='tanh', kernel_initializer=tf.keras.initializers.he_normal())
         self.conv3 = tf.keras.layers.Conv2D(channels*(scale_factor ** 2), 3,padding='valid',strides=(1, 1), name='final', kernel_initializer=tf.keras.initializers.he_normal())
         self.upsample = tf.keras.layers.Lambda(lambda x:tf.nn.depth_to_space(x,scale_factor),name = 'prediction')
+        self.time = []
+    
+    def get_run_time(self):
+        if(len(self.time)>0):
+            return sum(self.time)/len(self.time)
+        else:
+            return -1
 
+
+    
     def call(self, inputs):
         x = tf.pad(inputs, [[0, 0], [4, 4], [4, 4], [0, 0]], 'SYMMETRIC')
         x = self.conv1(x)

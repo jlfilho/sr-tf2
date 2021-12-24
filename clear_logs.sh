@@ -1,8 +1,8 @@
 #!/bin/bash
 
 
-rm -r logdir/*
+rm -r logdir/tmp/*
 
-rm -r checkpoint/*
+rm -r checkpoint/tmp/*
 
-rm test_logdir/*
+rm test_logdir/tmp/*

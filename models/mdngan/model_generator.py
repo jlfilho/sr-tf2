@@ -17,6 +17,12 @@ class IMDN(tf.keras.Model):
         self.upsample = tf.keras.layers.Lambda(lambda x:tf.nn.depth_to_space(x,scale_factor),name = 'prediction')
 
         self.time = []
+    
+    def get_run_time(self):
+        if(len(self.time)>0):
+            return sum(self.time)/len(self.time)
+        else:
+            return -1
 
     def call(self, inputs):
         x = tf.pad(inputs, [[0, 0], [1, 1], [1, 1], [0, 0]], 'SYMMETRIC')

@@ -24,7 +24,7 @@ class RaGAN(tf.keras.Model):
         # Save the weights
         self.generator.save_weights(checkpoint_filepath)
              
-        
+    @tf.function    
     def train_step(self, data):
         if isinstance(data, tuple):
             img_lr, img_hr = data
@@ -49,3 +49,18 @@ class RaGAN(tf.keras.Model):
         return reduce(lambda x,y: dict(x, **y), 
                       ({"d_loss": d_loss, "g_loss": g_loss,"a_loss": a_loss, "c_loss": c_loss, "p_loss": p_loss },
                        {m.name: m.result() for m in self.metrics})) 
+    
+    @tf.function
+    def test_step(self, data):
+        if isinstance(data, tuple):
+            img_lr, img_hr = data
+ 
+
+        # Compute predictions
+        img_sr = self.generator(img_lr, training=False)
+
+        # Update the metrics.
+        self.compiled_metrics.update_state(img_hr, img_sr)
+        
+        results = {m.name: m.result() for m in self.metrics}
+        return results

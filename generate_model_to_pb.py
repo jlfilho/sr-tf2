@@ -6,7 +6,8 @@ from tensorflow.keras.models import Model
 from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 import tensorflow.compat.v1 as tf1
 
-from models.espcn.model_espcn import espcn 
+#from models.espcn.model_espcn import espcn 
+from models.espcn.model_espcn import ESPCN as espcn 
 from models.ertsrgan.model_generator import g_ertsrgan
 
 

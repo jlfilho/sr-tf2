@@ -1,6 +1,4 @@
 import tensorflow as tf
-from models.utils import scale_2 as scale
-from models.utils import unscale_1 as unscale
 from lpips_tf import lpips_tf
 
 
@@ -47,11 +45,14 @@ def ssim_loss(y, y_pred,max_val=1.0):
     return values
 
 
+@tf.function
 def lpips(y, y_pred):
-    y = (y*255.) #/ 127.5 - 1
-    y = tf.keras.layers.Concatenate()([y, y, y])
-    y_pred = (y_pred*255.) # / 127.5 - 1
-    y_pred = tf.keras.layers.Concatenate()([y_pred, y_pred, y_pred])
+    y = (y*255.) / 127.5 - 1
+    if(y.shape[-1]==1):
+        y = tf.keras.layers.Concatenate()([y, y, y])
+    y_pred = (y_pred*255.) / 127.5 - 1
+    if(y_pred.shape[-1]==1):
+        y_pred = tf.keras.layers.Concatenate()([y_pred, y_pred, y_pred])
     if(len(y.shape)==4):
         values = lpips_tf.lpips(y[:, 4:-4, 4:-4], y_pred[:, 4:-4, 4:-4], model='net-lin', net='alex')
     if (len(y.shape)==3):

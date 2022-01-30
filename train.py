@@ -80,6 +80,9 @@ VAL_BATCH_SIZE = 16
 TEST_BATCH_SIZE = 4
 SHUFFLE_BUFFER_SIZE = 64
 
+LIST_TEST_CLUSTER = ['generic','game','sport','podcast']
+TEST_CLUSTER = ['sport']
+
 # Knowledge distillation model
 LOSS_FN='mae'
 DISTILLATION_RATE=0.8
@@ -150,6 +153,9 @@ def get_arguments():
                         help='Path to the test dataset info')
     parser.add_argument('--test_steps', type=int, default=TEST_STEPS, 
                         help='Total number of steps (batches of samples) to draw before stopping when performing evaluate at the end of every epoch.')
+    parser.add_argument('--test_cluster', type=str, default=TEST_CLUSTER, choices=LIST_TEST_CLUSTER,
+                        help='What cluster dataset to eval', required=False)
+         
 
     parser.add_argument('--hot_test_size', type=int, default=HOT_TEST_SIZE,
                         help='Number of images in hot test')
@@ -644,7 +650,7 @@ def train_rtsrgan(train_batch,steps_per_epoch, validation_steps,val_batch, test_
 def train_evsrnet(train_batch,steps_per_epoch, validation_steps,val_batch, test_batch, test_steps, test_print, scale_factor,args,callbacks,checkpoint_paph,
                 file_writer_cm,trainable_layer):
     model = EVSRNet(scale_factor=scale_factor,method=args.inter_method)
-    #model.build((None, None, None,1))
+    model.build((None, None, None,1))
     #print(model.summary())
     if args.load_weights:
         print("Loading weights...")
@@ -1000,140 +1006,142 @@ def print_hot_test(lr_hot_test_path,hr_hot_test_path,model=None,model_name=None,
     
 
 def get_test_dataset(model,scale_factor,args):
-    # test dataset
-    test_dataset_path=test_datasets['test_generic']['test_dataset_path']
-    test_dataset_info_path=test_datasets['test_generic']['test_dataset_info_path']
-    test_dataset = Dataset(
-                            args.test_batch_size,
-                            test_dataset_path,
-                            test_dataset_info_path,
-                            args.shuffle_buffer_size)
+    if ('generic' in args.test_cluster): 
+        # test dataset
+        test_dataset_path=test_datasets['test_generic']['test_dataset_path']
+        test_dataset_info_path=test_datasets['test_generic']['test_dataset_info_path']
+        test_dataset = Dataset(
+                                args.test_batch_size,
+                                test_dataset_path,
+                                test_dataset_info_path,
+                                args.shuffle_buffer_size)
 
-    if args.test_steps == 0:
-        test_steps = test_dataset.examples_num // args.test_batch_size \
-            if test_dataset.examples_num % args.test_batch_size != 0 else 0
-    else:
-        test_steps = args.test_steps
+        if args.test_steps == 0:
+            test_steps = test_dataset.examples_num // args.test_batch_size \
+                if test_dataset.examples_num % args.test_batch_size != 0 else 0
+        else:
+            test_steps = args.test_steps
+        
+        test_dataset = test_dataset.get_data()
+        test_batch = test_dataset.map(lambda x0,x1,x2,y: (scale(x1),scale(y)))
+
+        name_dataset = args.model+'_'+args.generator+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) if args.generator!=None else args.model+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) 
+        print(name_dataset,args.path_to_eval)
+
+        eval = model.evaluate(test_batch, verbose=1)
+
+        lr_hot_test_path=hot_test['hot_test_generic']['lr_hot_test_path']
+        hr_hot_test_path=hot_test['hot_test_generic']['hr_hot_test_path']
+        lr_img_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(lr_hot_test_path) if len(filenames)!=0][0])[0:args.hot_test_size]
+        hr_img_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(hr_hot_test_path) if len(filenames)!=0][0])[0:args.hot_test_size]
+        test_print = [lr_img_paths,hr_img_paths]
+
+        name_model = "generic"+'_'+args.model+'_'+args.generator if args.generator != None else "generic"+'_'+args.model 
+        run_time = print_hot_test(test_print[0],test_print[1],model=model,model_name=name_model,args=args,scale_factor=scale_factor)
+        print_eval(args.path_to_eval,eval,name_dataset,stat.mean(run_time))
+
+    if ('game' in args.test_cluster):
+        # test dataset
+        test_dataset_path=test_datasets['test_game']['test_dataset_path']
+        test_dataset_info_path=test_datasets['test_game']['test_dataset_info_path']
+        test_dataset = Dataset(
+                                args.test_batch_size,
+                                test_dataset_path,
+                                test_dataset_info_path,
+                                args.shuffle_buffer_size)
+
+        if args.test_steps == 0:
+            test_steps = test_dataset.examples_num // args.test_batch_size \
+                if test_dataset.examples_num % args.test_batch_size != 0 else 0
+        else:
+            test_steps = args.test_steps
+        
+        test_dataset = test_dataset.get_data()
+        test_batch = test_dataset.map(lambda x0,x1,x2,y: (scale(x1),scale(y)))
+
+        name_dataset = args.model+'_'+args.generator+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) if args.generator != None else args.model+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) 
+        print(name_dataset,args.path_to_eval)
+
+        eval = model.evaluate(test_batch, verbose=1)
+
+        lr_hot_test_path=hot_test['hot_test_game']['lr_hot_test_path']
+        hr_hot_test_path=hot_test['hot_test_game']['hr_hot_test_path']
+        lr_img_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(lr_hot_test_path) if len(filenames)!=0][0])[0:args.hot_test_size]
+        hr_img_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(hr_hot_test_path) if len(filenames)!=0][0])[0:args.hot_test_size]
+        test_print = [lr_img_paths,hr_img_paths]
+
+        name_model = "game"+'_'+args.model+'_'+args.generator if args.generator != None else "game"+'_'+args.model 
+        run_time = print_hot_test(test_print[0],test_print[1],model=model,model_name=name_model,args=args,scale_factor=scale_factor)
+        print_eval(args.path_to_eval,eval,name_dataset,stat.mean(run_time))
     
-    test_dataset = test_dataset.get_data()
-    test_batch = test_dataset.map(lambda x0,x1,x2,y: (scale(x1),scale(y)))
+    if ('sport' in args.test_cluster):
+        # test dataset
+        test_dataset_path=test_datasets['test_sport']['test_dataset_path']
+        test_dataset_info_path=test_datasets['test_sport']['test_dataset_info_path']
+        test_dataset = Dataset(
+                                args.test_batch_size,
+                                test_dataset_path,
+                                test_dataset_info_path,
+                                args.shuffle_buffer_size)
 
-    name_dataset = args.model+'_'+args.generator+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) if args.generator!=None else args.model+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) 
-    print(name_dataset,args.path_to_eval)
+        if args.test_steps == 0:
+            test_steps = test_dataset.examples_num // args.test_batch_size \
+                if test_dataset.examples_num % args.test_batch_size != 0 else 0
+        else:
+            test_steps = args.test_steps
+        
+        test_dataset = test_dataset.get_data()
+        test_batch = test_dataset.map(lambda x0,x1,x2,y: (scale(x1),scale(y)))
 
-    eval = model.evaluate(test_batch, verbose=1)
+        name_dataset = args.model+'_'+args.generator+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) if args.generator != None else args.model+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) 
 
-    lr_hot_test_path=hot_test['hot_test_generic']['lr_hot_test_path']
-    hr_hot_test_path=hot_test['hot_test_generic']['hr_hot_test_path']
-    lr_img_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(lr_hot_test_path) if len(filenames)!=0][0])[0:args.hot_test_size]
-    hr_img_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(hr_hot_test_path) if len(filenames)!=0][0])[0:args.hot_test_size]
-    test_print = [lr_img_paths,hr_img_paths]
+        print(name_dataset,args.path_to_eval)
 
-    name_model = "generic"+'_'+args.model+'_'+args.generator if args.generator != None else "generic"+'_'+args.model 
-    run_time = print_hot_test(test_print[0],test_print[1],model=model,model_name=name_model,args=args,scale_factor=scale_factor)
-    print_eval(args.path_to_eval,eval,name_dataset,stat.mean(run_time))
+        eval = model.evaluate(test_batch, verbose=1)
 
+        lr_hot_test_path=hot_test['hot_test_sport']['lr_hot_test_path']
+        hr_hot_test_path=hot_test['hot_test_sport']['hr_hot_test_path']
+        lr_img_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(lr_hot_test_path) if len(filenames)!=0][0])[0:args.hot_test_size]
+        hr_img_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(hr_hot_test_path) if len(filenames)!=0][0])[0:args.hot_test_size]
+        test_print = [lr_img_paths,hr_img_paths]
 
-    # test dataset
-    test_dataset_path=test_datasets['test_game']['test_dataset_path']
-    test_dataset_info_path=test_datasets['test_game']['test_dataset_info_path']
-    test_dataset = Dataset(
-                            args.test_batch_size,
-                            test_dataset_path,
-                            test_dataset_info_path,
-                            args.shuffle_buffer_size)
+        name_model = "sport"+'_'+args.model+'_'+args.generator if args.generator != None else "sport"+'_'+args.model 
+        run_time = print_hot_test(test_print[0],test_print[1],model=model,model_name=name_model,args=args,scale_factor=scale_factor)
+        print_eval(args.path_to_eval,eval,name_dataset,stat.mean(run_time))
 
-    if args.test_steps == 0:
-        test_steps = test_dataset.examples_num // args.test_batch_size \
-            if test_dataset.examples_num % args.test_batch_size != 0 else 0
-    else:
-        test_steps = args.test_steps
-    
-    test_dataset = test_dataset.get_data()
-    test_batch = test_dataset.map(lambda x0,x1,x2,y: (scale(x1),scale(y)))
+    if ('podcast' in args.test_cluster):
+        # test dataset
+        test_dataset_path=test_datasets['test_podcast']['test_dataset_path']
+        test_dataset_info_path=test_datasets['test_podcast']['test_dataset_info_path']
+        test_dataset = Dataset(
+                                args.test_batch_size,
+                                test_dataset_path,
+                                test_dataset_info_path,
+                                args.shuffle_buffer_size)
 
-    name_dataset = args.model+'_'+args.generator+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) if args.generator != None else args.model+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) 
-    print(name_dataset,args.path_to_eval)
+        if args.test_steps == 0:
+            test_steps = test_dataset.examples_num // args.test_batch_size \
+                if test_dataset.examples_num % args.test_batch_size != 0 else 0
+        else:
+            test_steps = args.test_steps
+        
+        test_dataset = test_dataset.get_data()
+        test_batch = test_dataset.map(lambda x0,x1,x2,y: (scale(x1),scale(y)))
 
-    eval = model.evaluate(test_batch, verbose=1)
+        name_dataset = args.model+'_'+args.generator+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) if args.generator != None else args.model+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) 
+        print(name_dataset,args.path_to_eval)
 
-    lr_hot_test_path=hot_test['hot_test_game']['lr_hot_test_path']
-    hr_hot_test_path=hot_test['hot_test_game']['hr_hot_test_path']
-    lr_img_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(lr_hot_test_path) if len(filenames)!=0][0])[0:args.hot_test_size]
-    hr_img_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(hr_hot_test_path) if len(filenames)!=0][0])[0:args.hot_test_size]
-    test_print = [lr_img_paths,hr_img_paths]
+        eval = model.evaluate(test_batch, verbose=1)
 
-    name_model = "game"+'_'+args.model+'_'+args.generator if args.generator != None else "game"+'_'+args.model 
-    run_time = print_hot_test(test_print[0],test_print[1],model=model,model_name=name_model,args=args,scale_factor=scale_factor)
-    print_eval(args.path_to_eval,eval,name_dataset,stat.mean(run_time))
+        lr_hot_test_path=hot_test['hot_test_podcast']['lr_hot_test_path']
+        hr_hot_test_path=hot_test['hot_test_podcast']['hr_hot_test_path']
+        lr_img_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(lr_hot_test_path) if len(filenames)!=0][0])[0:args.hot_test_size]
+        hr_img_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(hr_hot_test_path) if len(filenames)!=0][0])[0:args.hot_test_size]
+        test_print = [lr_img_paths,hr_img_paths]
 
-    # test dataset
-    test_dataset_path=test_datasets['test_sport']['test_dataset_path']
-    test_dataset_info_path=test_datasets['test_sport']['test_dataset_info_path']
-    test_dataset = Dataset(
-                            args.test_batch_size,
-                            test_dataset_path,
-                            test_dataset_info_path,
-                            args.shuffle_buffer_size)
-
-    if args.test_steps == 0:
-        test_steps = test_dataset.examples_num // args.test_batch_size \
-            if test_dataset.examples_num % args.test_batch_size != 0 else 0
-    else:
-        test_steps = args.test_steps
-    
-    test_dataset = test_dataset.get_data()
-    test_batch = test_dataset.map(lambda x0,x1,x2,y: (scale(x1),scale(y)))
-
-    name_dataset = args.model+'_'+args.generator+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) if args.generator != None else args.model+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) 
-
-    print(name_dataset,args.path_to_eval)
-
-    eval = model.evaluate(test_batch, verbose=1)
-
-    lr_hot_test_path=hot_test['hot_test_sport']['lr_hot_test_path']
-    hr_hot_test_path=hot_test['hot_test_sport']['hr_hot_test_path']
-    lr_img_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(lr_hot_test_path) if len(filenames)!=0][0])[0:args.hot_test_size]
-    hr_img_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(hr_hot_test_path) if len(filenames)!=0][0])[0:args.hot_test_size]
-    test_print = [lr_img_paths,hr_img_paths]
-
-    name_model = "sport"+'_'+args.model+'_'+args.generator if args.generator != None else "sport"+'_'+args.model 
-    run_time = print_hot_test(test_print[0],test_print[1],model=model,model_name=name_model,args=args,scale_factor=scale_factor)
-    print_eval(args.path_to_eval,eval,name_dataset,stat.mean(run_time))
-
-
-    # test dataset
-    test_dataset_path=test_datasets['test_podcast']['test_dataset_path']
-    test_dataset_info_path=test_datasets['test_podcast']['test_dataset_info_path']
-    test_dataset = Dataset(
-                            args.test_batch_size,
-                            test_dataset_path,
-                            test_dataset_info_path,
-                            args.shuffle_buffer_size)
-
-    if args.test_steps == 0:
-        test_steps = test_dataset.examples_num // args.test_batch_size \
-            if test_dataset.examples_num % args.test_batch_size != 0 else 0
-    else:
-        test_steps = args.test_steps
-    
-    test_dataset = test_dataset.get_data()
-    test_batch = test_dataset.map(lambda x0,x1,x2,y: (scale(x1),scale(y)))
-
-    name_dataset = args.model+'_'+args.generator+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) if args.generator != None else args.model+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) 
-    print(name_dataset,args.path_to_eval)
-
-    eval = model.evaluate(test_batch, verbose=1)
-
-    lr_hot_test_path=hot_test['hot_test_podcast']['lr_hot_test_path']
-    hr_hot_test_path=hot_test['hot_test_podcast']['hr_hot_test_path']
-    lr_img_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(lr_hot_test_path) if len(filenames)!=0][0])[0:args.hot_test_size]
-    hr_img_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(hr_hot_test_path) if len(filenames)!=0][0])[0:args.hot_test_size]
-    test_print = [lr_img_paths,hr_img_paths]
-
-    name_model = "podcast"+'_'+args.model+'_'+args.generator if args.generator != None else "podcast"+'_'+args.model 
-    run_time = print_hot_test(test_print[0],test_print[1],model=model,model_name=name_model,args=args,scale_factor=scale_factor)
-    print_eval(args.path_to_eval,eval,name_dataset,stat.mean(run_time))
+        name_model = "podcast"+'_'+args.model+'_'+args.generator if args.generator != None else "podcast"+'_'+args.model 
+        run_time = print_hot_test(test_print[0],test_print[1],model=model,model_name=name_model,args=args,scale_factor=scale_factor)
+        print_eval(args.path_to_eval,eval,name_dataset,stat.mean(run_time))
 
 
 

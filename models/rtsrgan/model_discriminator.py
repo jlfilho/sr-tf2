@@ -10,9 +10,13 @@ def d_rtsrgan(filters=64,input_shape=(72,72,1)):
         return d
     
     input = tf.keras.layers.Input(shape=input_shape)
+
     x = conv2d_block(input, filters, bn=False)
+
+    x = conv2d_block(x, filters, strides=2)
     x = conv2d_block(x, filters, strides=2)
     x = conv2d_block(x, filters*2)
+    
     x = tf.keras.layers.Dense(filters*16)(x)
     x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
     x = tf.keras.layers.Dense(1,activation='sigmoid')(x)

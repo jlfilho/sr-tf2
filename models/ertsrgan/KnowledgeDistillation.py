@@ -1,5 +1,5 @@
 import tensorflow as tf
-from models.metrics import psnr_loss, ssim_loss
+from models.metrics import ssim_loss
 
 
 class Distiller(tf.keras.Model):
@@ -21,8 +21,9 @@ class Distiller(tf.keras.Model):
         metrics,
         student_loss_fn,
         distillation_loss_fn,
+        perc_loss_fn,
         alpha=0.1,
-        temperature=3,
+        beta=0.2,
     ):
         """ Configure the distiller.
 
@@ -40,8 +41,9 @@ class Distiller(tf.keras.Model):
         super(Distiller, self).compile(optimizer=optimizer, metrics=metrics)
         self.student_loss_fn = student_loss_fn
         self.distillation_loss_fn = distillation_loss_fn
+        self.perc_loss_fn = perc_loss_fn
         self.alpha = alpha
-        self.temperature = temperature
+        self.beta = beta
 
     @tf.function
     def train_step(self, data):
@@ -57,11 +59,16 @@ class Distiller(tf.keras.Model):
                                    
             # Compute losses
             student_loss = self.student_loss_fn(y, student_predictions)
-            distillation_loss = self.distillation_loss_fn(
-                tf.nn.softmax(teacher_predictions / self.temperature, axis=1),
-                tf.nn.softmax(student_predictions / self.temperature, axis=1),
-            )
-            loss = self.alpha * student_loss + (1 - self.alpha) * distillation_loss
+            
+            distillation_loss = self.distillation_loss_fn(teacher_predictions,student_predictions)
+            #distillation_loss = self.distillation_loss_fn(ssim_loss(y,y),ssim_loss(y,student_predictions))
+
+            teacher_predictions = tf.keras.layers.Concatenate()([teacher_predictions, teacher_predictions, teacher_predictions])
+            student_predictions = tf.keras.layers.Concatenate()([student_predictions, student_predictions, student_predictions])
+            y = tf.keras.layers.Concatenate()([y, y, y])
+            perc_loss = self.perc_loss_fn(y, student_predictions)
+
+            loss = (1 - (self.alpha + self.beta)) * student_loss + self.alpha * distillation_loss + self.beta * perc_loss
             
 
         # Compute gradients
@@ -77,7 +84,7 @@ class Distiller(tf.keras.Model):
         # Return a dict of performance
         results = {m.name: m.result() for m in self.metrics}
         results.update(
-            {"student_loss": student_loss, "distillation_loss": distillation_loss}
+            {"student_loss": student_loss, "distillation_loss": distillation_loss, "perceptual_loss": perc_loss}
         )
         return results
 
@@ -90,14 +97,14 @@ class Distiller(tf.keras.Model):
         y_prediction = self.student(x, training=False)
 
         # Calculate the loss
-        student_loss = self.student_loss_fn(y, y_prediction)
+        #student_loss = self.student_loss_fn(y, y_prediction)
 
         # Update the metrics.
         self.compiled_metrics.update_state(y, y_prediction)
 
         # Return a dict of performance
         results = {m.name: m.result() for m in self.metrics}
-        results.update({"student_loss": student_loss})
+        #results.update({"student_loss": student_loss})
         return results
 
 

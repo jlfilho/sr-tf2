@@ -13,6 +13,7 @@ from tensorflow.keras.preprocessing.image import load_img
 from models.metrics import lpips
 
 
+
 #from tensorflow.keras.preprocessing.image import array_to_img
 
 norm_1 = tf.keras.layers.Rescaling(scale=1./255.)
@@ -91,9 +92,9 @@ def plot_results(images, logdir_path, scale_factor=2,model_name=None,epoch=None,
         w,h,_= img[1].shape
         
         if(title=="Low Resoluiton"):
-            x1, x2, y1, y2 = (w//3)//scale_factor, ((w//3)+100)//scale_factor, (h//3)//scale_factor, ((h//3)+100)//scale_factor
+            x1, x2, y1, y2 = (w//3)//scale_factor, ((w//3)+200)//scale_factor, (h//3)//scale_factor, ((h//3)+200)//scale_factor
         else:
-            x1, x2, y1, y2 = (w//3), ((w//3)+100), (h//3), ((h//3)+100)
+            x1, x2, y1, y2 = (w//3), ((w//3)+200), (h//3), ((h//3)+200)
         # Apply the x-limits.
         axins.set_xlim(x1, x2)
         # Apply the y-limits.

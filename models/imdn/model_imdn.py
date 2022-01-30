@@ -1,7 +1,10 @@
 import tensorflow as tf
-from models.mdngan.block import IMDB 
+from models.imdn.block import IMDB 
 
 class IMDN(tf.keras.Model):
+    '''
+    
+    '''
 
     def __init__(self,channels=1,scale_factor=2,filters=12):
         super(IMDN, self).__init__()

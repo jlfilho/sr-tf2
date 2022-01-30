@@ -4,8 +4,9 @@ import numpy as np
 
 class VGGLossNoActivation(object):
 
-    def __init__(self, image_shape):
+    def __init__(self, image_shape,loss_fn):
         self.model = self.create_model(image_shape)
+        self.loss_fn = loss_fn
         
     def create_model(self,image_shape):
         
@@ -28,6 +29,9 @@ class VGGLossNoActivation(object):
     # computes VGG loss or content loss
     def perceptual_loss(self, y_true, y_pred):
         return tf.math.reduce_mean(tf.math.square(self.model(self.preprocess_vgg(y_true)) - self.model(self.preprocess_vgg(y_pred))),None)
+
+    def custom_perceptual_loss(self, y_true, y_pred):
+        return self.loss_fn(self.model(self.preprocess_vgg(y_true)),self.model(self.preprocess_vgg(y_pred)))
     
     def euclidean_content_loss(self, y_true, y_pred):
         return tf.math.sqrt(tf.math.reduce_sum(tf.math.square(self.model(self.preprocess_vgg(y_true)) - self.model(self.preprocess_vgg(y_pred))), axis=None))
@@ -37,12 +41,15 @@ class VGGLossNoActivation(object):
 
 
 class GANLoss(object):
-    def __init__(self,perc_loss, cont_loss, adv_loss,lbd,eta,mu):
-        self.perc_loss=perc_loss
-        self.cont_loss=cont_loss
+    def __init__(self, loss_pix, loss_fea, loss_dis, adv_loss, alfa, eta, lbd, mu):
+        self.loss_pix=loss_pix
+        self.loss_fea=loss_fea
+        self.loss_dis=loss_dis
         self.adv_loss=adv_loss
-        self.lbd=lbd
+
+        self.alfa=alfa
         self.eta=eta
+        self.lbd=lbd
         self.mu=mu   
 
     def discriminator_loss(self,real_output, fake_output):
@@ -52,15 +59,15 @@ class GANLoss(object):
         total_loss = 0.5 * (real_loss + fake_loss)
         return total_loss
 
-    def generator_loss(self,fake_output,img_hr,img_sr):
-        noise = 0.05 * tf.random.uniform(tf.shape(fake_output))
-        a_loss = self.adv_loss(tf.ones_like(fake_output)-noise, fake_output) 
-        c_loss = self.cont_loss(img_hr,img_sr) 
+    def generative_loss(self, real_output, fake_output, img_hr,img_sr, teacher_img_sr):
+        loss_dis=self.loss_dis(teacher_img_sr,img_sr)
+        loss_adv = self.adv_loss(real_output, fake_output) 
+        loss_pix = self.loss_pix(img_hr, img_sr)
         img_hr = tf.keras.layers.Concatenate()([img_hr, img_hr, img_hr])
         img_sr = tf.keras.layers.Concatenate()([img_sr, img_sr, img_sr])
-        p_loss = self.perc_loss(img_hr,img_sr) 
-        total_loss = self.eta * c_loss + self.lbd * a_loss + self.mu * p_loss
-        return total_loss, c_loss , a_loss , p_loss
+        loss_fea = self.loss_fea(img_hr,img_sr)
+        total_loss = self.alfa * loss_pix + self.eta * loss_fea + self.lbd * loss_dis 
+        return total_loss, self.alfa * loss_pix , self.eta * loss_fea, self.lbd * loss_dis, self.mu*loss_adv
     
 
 def charbonnier_loss(y_true, y_pred):

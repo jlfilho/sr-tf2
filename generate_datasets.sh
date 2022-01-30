@@ -224,3 +224,249 @@
 # python3 datasets/prepare_div2k_dataset.py --hr_folder=datasets/loaded_harmonic/img_val/hr/2160p --lr_folder=datasets/loaded_harmonic/img_val/lr/540p_qp20/ --dataset_folder=datasets/loaded_harmonic/output/val/4X/540p_qp20 --type=full --lr_prefix=540p_qp20 --hr_prefix=2160p --temporal_radius=1 --crop_height=2160 --crop_width=3840 --scale_factor=4 
 
 # python3 datasets/prepare_div2k_dataset.py --hr_folder=datasets/loaded_harmonic/img_val/hr/2160p --lr_folder=datasets/loaded_harmonic/img_val/lr/540p_qp28/ --dataset_folder=datasets/loaded_harmonic/output/val/4X/540p_qp28 --type=full --lr_prefix=540p_qp28 --hr_prefix=2160p --temporal_radius=1 --crop_height=2160 --crop_width=3840 --scale_factor=4 
+
+#########################
+
+# # With images
+# # train 2X
+# # echo "train 2X"
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/game/img_train/hr/540p --lr_folder=/media/joao/SAMSUNG/Youtube/game/img_train/lr/270p_qp17 \
+# --dataset_folder=datasets/loaded_harmonic/output/game/train/2X/270p_qp17 --type=blocks --lr_prefix=270p_qp17 --hr_prefix=540p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=2
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/game/img_train/hr/540p --lr_folder=/media/joao/SAMSUNG/Youtube/game/img_train/lr/270p_qp20 \
+# --dataset_folder=datasets/loaded_harmonic/output/game/train/2X/270p_qp20 --type=blocks --lr_prefix=270p_qp20 --hr_prefix=540p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=2
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/game/img_train/hr/540p --lr_folder=/media/joao/SAMSUNG/Youtube/game/img_train/lr/270p_qp28 \
+# --dataset_folder=datasets/loaded_harmonic/output/game/train/2X/270p_qp28 --type=blocks --lr_prefix=270p_qp28 --hr_prefix=540p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=2
+
+
+# # With images
+# # train 3X
+# # echo "train 3X"
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/game/img_train/hr/810p --lr_folder=/media/joao/SAMSUNG/Youtube/game/img_train/lr/270p_qp17 \
+# --dataset_folder=datasets/loaded_harmonic/output/game/train/3X/270p_qp17 --type=blocks --lr_prefix=270p_qp17 --hr_prefix=810p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=3
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/game/img_train/hr/810p --lr_folder=/media/joao/SAMSUNG/Youtube/game/img_train/lr/270p_qp20 \
+# --dataset_folder=datasets/loaded_harmonic/output/game/train/3X/270p_qp20 --type=blocks --lr_prefix=270p_qp20 --hr_prefix=810p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=3
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/game/img_train/hr/810p --lr_folder=/media/joao/SAMSUNG/Youtube/game/img_train/lr/270p_qp28 \
+# --dataset_folder=datasets/loaded_harmonic/output/game/train/3X/270p_qp28 --type=blocks --lr_prefix=270p_qp28 --hr_prefix=810p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=3
+
+
+# # With images
+# # train 4X
+# # echo "train 4X"
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/game/img_train/hr/1080p --lr_folder=/media/joao/SAMSUNG/Youtube/game/img_train/lr/270p_qp17 \
+# --dataset_folder=datasets/loaded_harmonic/output/game/train/4X/270p_qp17 --type=blocks --lr_prefix=270p_qp17 --hr_prefix=1080p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=4
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/game/img_train/hr/1080p --lr_folder=/media/joao/SAMSUNG/Youtube/game/img_train/lr/270p_qp20 \
+# --dataset_folder=datasets/loaded_harmonic/output/game/train/4X/270p_qp20 --type=blocks --lr_prefix=270p_qp20 --hr_prefix=1080p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=4
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/game/img_train/hr/1080p --lr_folder=/media/joao/SAMSUNG/Youtube/game/img_train/lr/270p_qp28 \
+# --dataset_folder=datasets/loaded_harmonic/output/game/train/4X/270p_qp28 --type=blocks --lr_prefix=270p_qp28 --hr_prefix=1080p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=4
+
+
+# #-----------------------
+# # With images
+# # train 2X
+# # echo "train 2X"
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_train/hr/540p --lr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_train/lr/270p_qp17 \
+# --dataset_folder=datasets/loaded_harmonic/output/podcast/train/2X/270p_qp17 --type=blocks --lr_prefix=270p_qp17 --hr_prefix=540p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=2
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_train/hr/540p --lr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_train/lr/270p_qp20 \
+# --dataset_folder=datasets/loaded_harmonic/output/podcast/train/2X/270p_qp20 --type=blocks --lr_prefix=270p_qp20 --hr_prefix=540p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=2
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_train/hr/540p --lr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_train/lr/270p_qp28 \
+# --dataset_folder=datasets/loaded_harmonic/output/podcast/train/2X/270p_qp28 --type=blocks --lr_prefix=270p_qp28 --hr_prefix=540p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=2
+
+
+# # With images
+# # train 3X
+# # echo "train 3X"
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_train/hr/810p --lr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_train/lr/270p_qp17 \
+# --dataset_folder=datasets/loaded_harmonic/output/podcast/train/3X/270p_qp17 --type=blocks --lr_prefix=270p_qp17 --hr_prefix=810p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=3
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_train/hr/810p --lr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_train/lr/270p_qp20 \
+# --dataset_folder=datasets/loaded_harmonic/output/podcast/train/3X/270p_qp20 --type=blocks --lr_prefix=270p_qp20 --hr_prefix=810p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=3
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_train/hr/810p --lr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_train/lr/270p_qp28 \
+# --dataset_folder=datasets/loaded_harmonic/output/podcast/train/3X/270p_qp28 --type=blocks --lr_prefix=270p_qp28 --hr_prefix=810p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=3
+
+
+# # With images
+# # train 4X
+# # echo "train 4X"
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_train/hr/1080p --lr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_train/lr/270p_qp17 \
+# --dataset_folder=datasets/loaded_harmonic/output/podcast/train/4X/270p_qp17 --type=blocks --lr_prefix=270p_qp17 --hr_prefix=1080p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=4
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_train/hr/1080p --lr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_train/lr/270p_qp20 \
+# --dataset_folder=datasets/loaded_harmonic/output/podcast/train/4X/270p_qp20 --type=blocks --lr_prefix=270p_qp20 --hr_prefix=1080p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=4
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_train/hr/1080p --lr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_train/lr/270p_qp28 \
+# --dataset_folder=datasets/loaded_harmonic/output/podcast/train/4X/270p_qp28 --type=blocks --lr_prefix=270p_qp28 --hr_prefix=1080p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=4
+
+
+# #-----------------------
+# # With images
+# # train 2X
+# # echo "train 2X"
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/sport/img_train/hr/540p --lr_folder=/media/joao/SAMSUNG/Youtube/sport/img_train/lr/270p_qp17 \
+# --dataset_folder=datasets/loaded_harmonic/output/sport/train/2X/270p_qp17 --type=blocks --lr_prefix=270p_qp17 --hr_prefix=540p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=2
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/sport/img_train/hr/540p --lr_folder=/media/joao/SAMSUNG/Youtube/sport/img_train/lr/270p_qp20 \
+# --dataset_folder=datasets/loaded_harmonic/output/sport/train/2X/270p_qp20 --type=blocks --lr_prefix=270p_qp20 --hr_prefix=540p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=2
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/sport/img_train/hr/540p --lr_folder=/media/joao/SAMSUNG/Youtube/sport/img_train/lr/270p_qp28 \
+# --dataset_folder=datasets/loaded_harmonic/output/sport/train/2X/270p_qp28 --type=blocks --lr_prefix=270p_qp28 --hr_prefix=540p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=2
+
+
+
+# # With images
+# # train 3X
+# # echo "train 3X"
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/sport/img_train/hr/810p --lr_folder=/media/joao/SAMSUNG/Youtube/sport/img_train/lr/270p_qp17 \
+# --dataset_folder=datasets/loaded_harmonic/output/sport/train/3X/270p_qp17 --type=blocks --lr_prefix=270p_qp17 --hr_prefix=810p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=3
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/sport/img_train/hr/810p --lr_folder=/media/joao/SAMSUNG/Youtube/sport/img_train/lr/270p_qp20 \
+# --dataset_folder=datasets/loaded_harmonic/output/sport/train/3X/270p_qp20 --type=blocks --lr_prefix=270p_qp20 --hr_prefix=810p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=3
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/sport/img_train/hr/810p --lr_folder=/media/joao/SAMSUNG/Youtube/sport/img_train/lr/270p_qp28 \
+# --dataset_folder=datasets/loaded_harmonic/output/sport/train/3X/270p_qp28 --type=blocks --lr_prefix=270p_qp28 --hr_prefix=810p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=3
+
+
+
+# # With images
+# # train 4X
+# # echo "train 4X"
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/sport/img_train/hr/1080p --lr_folder=/media/joao/SAMSUNG/Youtube/sport/img_train/lr/270p_qp17 \
+# --dataset_folder=datasets/loaded_harmonic/output/sport/train/4X/270p_qp17 --type=blocks --lr_prefix=270p_qp17 --hr_prefix=1080p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=4
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/sport/img_train/hr/1080p --lr_folder=/media/joao/SAMSUNG/Youtube/sport/img_train/lr/270p_qp20 \
+# --dataset_folder=datasets/loaded_harmonic/output/sport/train/4X/270p_qp20 --type=blocks --lr_prefix=270p_qp20 --hr_prefix=1080p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=4
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/sport/img_train/hr/1080p --lr_folder=/media/joao/SAMSUNG/Youtube/sport/img_train/lr/270p_qp28 \
+# --dataset_folder=datasets/loaded_harmonic/output/sport/train/4X/270p_qp28 --type=blocks --lr_prefix=270p_qp28 --hr_prefix=1080p --temporal_radius=1 --block_size=36 --stride=36 --scale_factor=4
+
+
+
+# # With images
+# # test 2X
+# # echo "test 2X"
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/game/img_test/hr/540p --lr_folder=/media/joao/SAMSUNG/Youtube/game/img_test/lr/270p_qp17 \
+# --dataset_folder=datasets/loaded_harmonic/output/game/test/2X/270p_qp17 --type=full --lr_prefix=270p_qp17 --hr_prefix=540p --temporal_radius=1 --crop_height=540 --crop_width=960 --scale_factor=2
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/game/img_test/hr/540p --lr_folder=/media/joao/SAMSUNG/Youtube/game/img_test/lr/270p_qp20 \
+# --dataset_folder=datasets/loaded_harmonic/output/game/test/2X/270p_qp20 --type=full --lr_prefix=270p_qp20 --hr_prefix=540p --temporal_radius=1 --crop_height=540 --crop_width=960 --scale_factor=2
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/game/img_test/hr/540p --lr_folder=/media/joao/SAMSUNG/Youtube/game/img_test/lr/270p_qp28 \
+# --dataset_folder=datasets/loaded_harmonic/output/game/test/2X/270p_qp28 --type=full --lr_prefix=270p_qp28 --hr_prefix=540p --temporal_radius=1 --crop_height=540 --crop_width=960 --scale_factor=2
+
+
+# # With images
+# # test 3X
+# # echo "test 3X"
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/game/img_test/hr/810p --lr_folder=/media/joao/SAMSUNG/Youtube/game/img_test/lr/270p_qp17 \
+# --dataset_folder=datasets/loaded_harmonic/output/game/test/3X/270p_qp17 --type=full --lr_prefix=270p_qp17 --hr_prefix=810p --temporal_radius=1 --crop_height=810 --crop_width=1440 --scale_factor=3
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/game/img_test/hr/810p --lr_folder=/media/joao/SAMSUNG/Youtube/game/img_test/lr/270p_qp20 \
+# --dataset_folder=datasets/loaded_harmonic/output/game/test/3X/270p_qp20 --type=full --lr_prefix=270p_qp20 --hr_prefix=810p --temporal_radius=1 --crop_height=810 --crop_width=1440 --scale_factor=3
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/game/img_test/hr/810p --lr_folder=/media/joao/SAMSUNG/Youtube/game/img_test/lr/270p_qp28 \
+# --dataset_folder=datasets/loaded_harmonic/output/game/test/3X/270p_qp28 --type=full --lr_prefix=270p_qp28 --hr_prefix=810p --temporal_radius=1 --crop_height=810 --crop_width=1440 --scale_factor=3
+
+
+# # With images
+# # test 4X
+# # echo "test 4X"
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/game/img_test/hr/1080p --lr_folder=/media/joao/SAMSUNG/Youtube/game/img_test/lr/270p_qp17 \
+# --dataset_folder=datasets/loaded_harmonic/output/game/test/4X/270p_qp17 --type=full --lr_prefix=270p_qp17 --hr_prefix=1080p --temporal_radius=1 --crop_height=1080 --crop_width=1920 --scale_factor=4
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/game/img_test/hr/1080p --lr_folder=/media/joao/SAMSUNG/Youtube/game/img_test/lr/270p_qp20 \
+# --dataset_folder=datasets/loaded_harmonic/output/game/test/4X/270p_qp20 --type=full --lr_prefix=270p_qp20 --hr_prefix=1080p --temporal_radius=1 --crop_height=1080 --crop_width=1920 --scale_factor=4
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/game/img_test/hr/1080p --lr_folder=/media/joao/SAMSUNG/Youtube/game/img_test/lr/270p_qp28 \
+# --dataset_folder=datasets/loaded_harmonic/output/game/test/4X/270p_qp28 --type=full --lr_prefix=270p_qp28 --hr_prefix=1080p --temporal_radius=1 --crop_height=1080 --crop_width=1920 --scale_factor=4
+
+# # With images
+# # test 2X
+# # echo "test 2X"
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_test/hr/540p --lr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_test/lr/270p_qp17 \
+# --dataset_folder=datasets/loaded_harmonic/output/podcast/test/2X/270p_qp17 --type=full --lr_prefix=270p_qp17 --hr_prefix=540p --temporal_radius=1 --crop_height=540 --crop_width=960 --scale_factor=2
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_test/hr/540p --lr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_test/lr/270p_qp20 \
+# --dataset_folder=datasets/loaded_harmonic/output/podcast/test/2X/270p_qp20 --type=full --lr_prefix=270p_qp20 --hr_prefix=540p --temporal_radius=1 --crop_height=540 --crop_width=960 --scale_factor=2
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_test/hr/540p --lr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_test/lr/270p_qp28 \
+# --dataset_folder=datasets/loaded_harmonic/output/podcast/test/2X/270p_qp28 --type=full --lr_prefix=270p_qp28 --hr_prefix=540p --temporal_radius=1 --crop_height=540 --crop_width=960 --scale_factor=2
+
+
+# # With images
+# # test 3X
+# # echo "test 3X"
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_test/hr/810p --lr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_test/lr/270p_qp17 \
+# --dataset_folder=datasets/loaded_harmonic/output/podcast/test/3X/270p_qp17 --type=full --lr_prefix=270p_qp17 --hr_prefix=810p --temporal_radius=1 --crop_height=810 --crop_width=1440 --scale_factor=3
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_test/hr/810p --lr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_test/lr/270p_qp20 \
+# --dataset_folder=datasets/loaded_harmonic/output/podcast/test/3X/270p_qp20 --type=full --lr_prefix=270p_qp20 --hr_prefix=810p --temporal_radius=1 --crop_height=810 --crop_width=1440 --scale_factor=3
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_test/hr/810p --lr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_test/lr/270p_qp28 \
+# --dataset_folder=datasets/loaded_harmonic/output/podcast/test/3X/270p_qp28 --type=full --lr_prefix=270p_qp28 --hr_prefix=810p --temporal_radius=1 --crop_height=810 --crop_width=1440 --scale_factor=3
+
+
+# # With images
+# # test 4X
+# # echo "test 4X"
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_test/hr/1080p --lr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_test/lr/270p_qp17 \
+# --dataset_folder=datasets/loaded_harmonic/output/podcast/test/4X/270p_qp17 --type=full --lr_prefix=270p_qp17 --hr_prefix=1080p --temporal_radius=1 --crop_height=1080 --crop_width=1920 --scale_factor=4
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_test/hr/1080p --lr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_test/lr/270p_qp20 \
+# --dataset_folder=datasets/loaded_harmonic/output/podcast/test/4X/270p_qp20 --type=full --lr_prefix=270p_qp20 --hr_prefix=1080p --temporal_radius=1 --crop_height=1080 --crop_width=1920 --scale_factor=4
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_test/hr/1080p --lr_folder=/media/joao/SAMSUNG/Youtube/podcast/img_test/lr/270p_qp28 \
+# --dataset_folder=datasets/loaded_harmonic/output/podcast/test/4X/270p_qp28 --type=full --lr_prefix=270p_qp28 --hr_prefix=1080p --temporal_radius=1 --crop_height=1080 --crop_width=1920 --scale_factor=4
+
+# # With images
+# # test 2X
+# # echo "test 2X"
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/sport/img_test/hr/540p --lr_folder=/media/joao/SAMSUNG/Youtube/sport/img_test/lr/270p_qp17 \
+# --dataset_folder=datasets/loaded_harmonic/output/sport/test/2X/270p_qp17 --type=full --lr_prefix=270p_qp17 --hr_prefix=540p --temporal_radius=1 --crop_height=540 --crop_width=960 --scale_factor=2
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/sport/img_test/hr/540p --lr_folder=/media/joao/SAMSUNG/Youtube/sport/img_test/lr/270p_qp20 \
+# --dataset_folder=datasets/loaded_harmonic/output/sport/test/2X/270p_qp20 --type=full --lr_prefix=270p_qp20 --hr_prefix=540p --temporal_radius=1 --crop_height=540 --crop_width=960 --scale_factor=2
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/sport/img_test/hr/540p --lr_folder=/media/joao/SAMSUNG/Youtube/sport/img_test/lr/270p_qp28 \
+# --dataset_folder=datasets/loaded_harmonic/output/sport/test/2X/270p_qp28 --type=full --lr_prefix=270p_qp28 --hr_prefix=540p --temporal_radius=1 --crop_height=540 --crop_width=960 --scale_factor=2
+
+
+# # With images
+# # test 3X
+# # echo "test 3X"
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/sport/img_test/hr/810p --lr_folder=/media/joao/SAMSUNG/Youtube/sport/img_test/lr/270p_qp17 \
+# --dataset_folder=datasets/loaded_harmonic/output/sport/test/3X/270p_qp17 --type=full --lr_prefix=270p_qp17 --hr_prefix=810p --temporal_radius=1 --crop_height=810 --crop_width=1440 --scale_factor=3
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/sport/img_test/hr/810p --lr_folder=/media/joao/SAMSUNG/Youtube/sport/img_test/lr/270p_qp20 \
+# --dataset_folder=datasets/loaded_harmonic/output/sport/test/3X/270p_qp20 --type=full --lr_prefix=270p_qp20 --hr_prefix=810p --temporal_radius=1 --crop_height=810 --crop_width=1440 --scale_factor=3
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/sport/img_test/hr/810p --lr_folder=/media/joao/SAMSUNG/Youtube/sport/img_test/lr/270p_qp28 \
+# --dataset_folder=datasets/loaded_harmonic/output/sport/test/3X/270p_qp28 --type=full --lr_prefix=270p_qp28 --hr_prefix=810p --temporal_radius=1 --crop_height=810 --crop_width=1440 --scale_factor=3
+
+
+# # With images
+# # test 4X
+# # echo "test 4X"
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/sport/img_test/hr/1080p --lr_folder=/media/joao/SAMSUNG/Youtube/sport/img_test/lr/270p_qp17 \
+# --dataset_folder=datasets/loaded_harmonic/output/sport/test/4X/270p_qp17 --type=full --lr_prefix=270p_qp17 --hr_prefix=1080p --temporal_radius=1 --crop_height=1080 --crop_width=1920 --scale_factor=4
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/sport/img_test/hr/1080p --lr_folder=/media/joao/SAMSUNG/Youtube/sport/img_test/lr/270p_qp20 \
+# --dataset_folder=datasets/loaded_harmonic/output/sport/test/4X/270p_qp20 --type=full --lr_prefix=270p_qp20 --hr_prefix=1080p --temporal_radius=1 --crop_height=1080 --crop_width=1920 --scale_factor=4
+
+# python3 datasets/prepare_div2k_dataset.py --hr_folder=/media/joao/SAMSUNG/Youtube/sport/img_test/hr/1080p --lr_folder=/media/joao/SAMSUNG/Youtube/sport/img_test/lr/270p_qp28 \
+# --dataset_folder=datasets/loaded_harmonic/output/sport/test/4X/270p_qp28 --type=full --lr_prefix=270p_qp28 --hr_prefix=1080p --temporal_radius=1 --crop_height=1080 --crop_width=1920 --scale_factor=4

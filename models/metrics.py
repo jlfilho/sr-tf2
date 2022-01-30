@@ -47,10 +47,10 @@ def ssim_loss(y, y_pred,max_val=1.0):
 
 @tf.function
 def lpips(y, y_pred):
-    y = (y*255.) / 127.5 - 1
+    y = (y*255.) 
     if(y.shape[-1]==1):
         y = tf.keras.layers.Concatenate()([y, y, y])
-    y_pred = (y_pred*255.) / 127.5 - 1
+    y_pred = (y_pred*255.) 
     if(y_pred.shape[-1]==1):
         y_pred = tf.keras.layers.Concatenate()([y_pred, y_pred, y_pred])
     if(len(y.shape)==4):

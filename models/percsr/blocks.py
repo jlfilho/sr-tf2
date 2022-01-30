@@ -1,30 +1,5 @@
 import tensorflow as tf
 
-class RB(tf.keras.Model):
-    def __init__(self,filters=32,kernel_size=3,name=None):
-        super(RB, self).__init__()
-        self.conv = tf.keras.layers.Conv2D(filters, kernel_size,padding='same',strides=(1, 1), name=name,
-                                kernel_initializer=tf.keras.initializers.VarianceScaling(scale=1., 
-                                   mode='fan_in', distribution='truncated_normal', seed=None))
-        self.lrelu = tf.keras.layers.LeakyReLU(alpha=0.2)
-
-    def call(self, inputs):
-        x = self.conv(inputs)
-        return self.lrelu(x)
-
-
-class Upsample(tf.keras.Model):
-    def __init__(self,channels=1,scale_factor=2):
-        super(Upsample, self).__init__()
-        self.conv = tf.keras.layers.Conv2D(channels*(scale_factor ** 2), 3,activation='tanh', 
-            padding='same',strides=(1, 1), kernel_initializer=tf.keras.initializers.VarianceScaling(scale=1., 
-            mode='fan_in', distribution='truncated_normal', seed=None))
-        self.upsample = tf.keras.layers.Lambda(lambda x:tf.nn.depth_to_space(x,scale_factor))
-
-    def call(self, inputs):
-        x = self.conv(inputs)
-        return self.upsample(x)
-
 
 class DRB(tf.keras.Model):
     def __init__(self,filters=32,kernel_size=3,distillation_rate=0.8):

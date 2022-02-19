@@ -5,7 +5,7 @@ import statistics as stat
 
 
 
-from models.utils import plot_test_images
+from models.utils import plot_test_images, plot_images
 
 from models.espcn.model_espcn import ESPCN as espcn
 
@@ -52,7 +52,31 @@ hot_test= {'hot_test_generic': {
 }}
 
 
-test_datasets = {'test_generic': {
+test= {
+'test_generic': {
+  'lr_test_path': "/home/joao/Documentos/projetos/sr-tf2/datasets/loaded_harmonic/img_test/lr/270p_qp17/",
+  'hr_test_path': "/home/joao/Documentos/projetos/sr-tf2/datasets/loaded_harmonic/img_test/hr/1080p/",
+  'logdir': "test_logdir/test/generic/"
+},
+'test_game': {
+  'lr_test_path': "/media/joao/SAMSUNG/Youtube/game/img_test/lr/270p_qp17/",
+  'hr_test_path': "/media/joao/SAMSUNG/Youtube/game/img_test/hr/1080p/",
+  'logdir': "test_logdir/test/game/"
+},
+'test_sport': {
+  'lr_test_path': "/media/joao/SAMSUNG/Youtube/sport/img_test/lr/270p_qp17/",
+  'hr_test_path': "/media/joao/SAMSUNG/Youtube/sport/img_test/hr/1080p/",
+  'logdir': "test_logdir/test/sport/"
+},
+'test_podcast': {
+  'lr_test_path': "/media/joao/SAMSUNG/Youtube/podcast/img_test/lr/270p_qp17/",
+  'hr_test_path': "/media/joao/SAMSUNG/Youtube/podcast/img_test/hr/1080p/",
+  'logdir': "test_logdir/test/podcast/"
+}}
+
+
+test_datasets = {
+'test_generic': {
   'test_dataset_path': "datasets/loaded_harmonic/output/generic/test/4X/270p_qp17/dataset.tfrecords",
   'test_dataset_info_path': "datasets/loaded_harmonic/output/generic/test/4X/270p_qp17/dataset_info.txt"
 },
@@ -83,6 +107,8 @@ SHUFFLE_BUFFER_SIZE = 64
 LIST_TEST_CLUSTER = ['generic','game','sport','podcast']
 TEST_CLUSTER = ['sport']
 
+SCHEDULE_VALUES=[100]
+
 # Knowledge distillation model
 LOSS_FN='mae'
 DISTILLATION_RATE=0.8
@@ -101,7 +127,7 @@ TEST_STEPS = 0
 EPOCHS_PER_SAVE = 5
 LOGDIR = 'logdir'
 CHECKPOINT = 'checkpoint/'
-TRAINNABLE_LAYER = 'conv1'
+TRAINNABLE_LAYER = 'final'
 PATH_TO_EVAL = 'test_logdir/stats.txt'
 TEST_LOGDIR='test_logdir/'
 
@@ -153,7 +179,7 @@ def get_arguments():
                         help='Path to the test dataset info')
     parser.add_argument('--test_steps', type=int, default=TEST_STEPS, 
                         help='Total number of steps (batches of samples) to draw before stopping when performing evaluate at the end of every epoch.')
-    parser.add_argument('--test_cluster', type=str, default=TEST_CLUSTER, choices=LIST_TEST_CLUSTER,
+    parser.add_argument('--test_cluster', nargs='*', type=str, default=TEST_CLUSTER, choices=LIST_TEST_CLUSTER,
                         help='What cluster dataset to eval', required=False)
          
 
@@ -168,8 +194,12 @@ def get_arguments():
                         help='Path to the model checkpoint to evaluate')
     parser.add_argument('--load_weights', action='store_true',
                         help='Load weights')
+    parser.add_argument('--load_weights_perc', action='store_true',
+                        help='Load weights perceptual')
     parser.add_argument('--eval', action='store_true',
                         help='Avaluete model')
+    parser.add_argument('--range_to_save', type=int, default=10,
+                        help='Range of image to save for teste.' )                    
     parser.add_argument('--transfer_learning', action='store_true',
                         help='Transfer learning from lower-upscale model')
     parser.add_argument('--trainable_layer', type=str, default=TRAINNABLE_LAYER,
@@ -186,8 +216,10 @@ def get_arguments():
                         help='Number of epochs before full decay rate tick used in exponential decay')
     parser.add_argument('--type_reduce_lr', type=str, default=TYPE_REDUCE_LR, choices=['plateau','schedules'],
                         help='Type of reduce learning rate')
+    parser.add_argument('--schedule_values',nargs='*', type=int, default=SCHEDULE_VALUES,
+                        help='list of epochs values to reduce lr')
 
-    parser.add_argument('--loss_fn', type=str, default=LOSS_FN, choices=['mse','mae','huber'],
+    parser.add_argument('--loss_fn', type=str, default=LOSS_FN, choices=['mse','mae','huber', 'fea'],
                         help='Set the loss function to knowledge distillation model')
     parser.add_argument('--distillation_rate', type=float, default=DISTILLATION_RATE,
                         help='Distillation rate in knowledge distillation model')
@@ -301,7 +333,7 @@ def main():
                                         patience=args.lr_decay_epochs, mode='min', min_lr=1e-6,verbose=1)
     elif args.type_reduce_lr == 'schedules':
         def scheduler(epoch, lr):
-            if epoch in [50,100]:
+            if epoch in args.schedule_values:
                 return lr * tf.math.exp(-0.1)
             else:
                 return lr
@@ -699,9 +731,19 @@ def train_evsrnet(train_batch,steps_per_epoch, validation_steps,val_batch, test_
 def train_teacher(train_batch,steps_per_epoch, validation_steps,val_batch, test_batch, test_steps, test_print, scale_factor,args,callbacks,checkpoint_paph,file_writer_cm,trainable_layer):
     model = Teacher(channels=1,scale_factor=scale_factor,distillation_rate=args.distillation_rate)
     model.build((None, None, None,1))
+    print(model.summary())
     if args.load_weights:
         print("Loading weights...")
         model.load_weights(checkpoint_paph)
+
+    if(args.eval==True):
+        print("Loading weights...")
+        model.load_weights(checkpoint_paph)
+        print("Evaluate model")
+        model.compile(metrics=[psnr,ssim,rmse,lpips])
+        get_test_dataset(model,scale_factor,args)
+        exit(1)
+
     if args.transfer_learning:
         checkpoint_paph_from="{}{}_{}x/model.ckpt".format("checkpoint/",args.model,args.scaleFrom)
         print("Transfer learning from {}x-upscale model...".format(args.scaleFrom))
@@ -723,6 +765,11 @@ def train_teacher(train_batch,steps_per_epoch, validation_steps,val_batch, test_
         loss_fn = tf.keras.losses.Huber()
     if args.loss_fn == "mae":
         loss_fn = tf.keras.losses.MeanAbsoluteError()
+    if args.loss_fn == "fea":    
+        loss_aux = tf.keras.losses.MeanAbsoluteError()
+        shape_hr = (36*scale_factor,36*scale_factor,3)    
+        vgg_loss = VGGLoss(shape_hr,loss_aux)
+        loss_fn = vgg_loss.custom_perceptual_loss
 
     model.compile(optimizer=opt, loss=loss_fn, metrics=[psnr,ssim,rmse,lpips])
     trainable_weights(model)
@@ -743,7 +790,10 @@ def train_teacher(train_batch,steps_per_epoch, validation_steps,val_batch, test_
     verbose=1,steps_per_epoch=steps_per_epoch,validation_steps=validation_steps,validation_data=val_batch)
 
     print("Evaluate model")
-    eval = model.evaluate(test_batch, verbose=1, steps=test_steps)
+    if args.loss_fn == "fea": 
+        eval = []
+    else:
+        eval = model.evaluate(test_batch, verbose=1, steps=test_steps)
     saved_model(model, 'saved_model/{}/'.format(args.model))
     return eval, model.get_run_time()
 
@@ -1030,6 +1080,15 @@ def get_test_dataset(model,scale_factor,args):
 
         eval = model.evaluate(test_batch, verbose=1)
 
+        lr_path=test['test_generic']['lr_test_path']
+        hr_path=test['test_generic']['hr_test_path']
+        logdir=test['test_generic']['logdir']
+        lr_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(lr_path) if len(filenames)!=0][0])
+        hr_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(hr_path) if len(filenames)!=0][0])
+        plot_images("bi", lr_paths, hr_paths, args, logdir+"/"+"bicubic"+"/",scale_factor=scale_factor)
+        plot_images("hr", lr_paths, hr_paths, args, logdir+"/"+"hr"+"/",scale_factor=scale_factor)
+        run_time = plot_images(model, lr_paths, hr_paths, args, logdir+"/"+args.generator+"/",scale_factor=scale_factor)
+
         lr_hot_test_path=hot_test['hot_test_generic']['lr_hot_test_path']
         hr_hot_test_path=hot_test['hot_test_generic']['hr_hot_test_path']
         lr_img_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(lr_hot_test_path) if len(filenames)!=0][0])[0:args.hot_test_size]
@@ -1037,7 +1096,7 @@ def get_test_dataset(model,scale_factor,args):
         test_print = [lr_img_paths,hr_img_paths]
 
         name_model = "generic"+'_'+args.model+'_'+args.generator if args.generator != None else "generic"+'_'+args.model 
-        run_time = print_hot_test(test_print[0],test_print[1],model=model,model_name=name_model,args=args,scale_factor=scale_factor)
+        # run_time = print_hot_test(test_print[0],test_print[1],model=model,model_name=name_model,args=args,scale_factor=scale_factor)
         print_eval(args.path_to_eval,eval,name_dataset,stat.mean(run_time))
 
     if ('game' in args.test_cluster):
@@ -1064,6 +1123,15 @@ def get_test_dataset(model,scale_factor,args):
 
         eval = model.evaluate(test_batch, verbose=1)
 
+        lr_path=test['test_game']['lr_test_path']
+        hr_path=test['test_game']['hr_test_path']
+        logdir=test['test_game']['logdir']
+        lr_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(lr_path) if len(filenames)!=0][0])
+        hr_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(hr_path) if len(filenames)!=0][0])
+        plot_images("bi", lr_paths, hr_paths, args, logdir+"/"+"bicubic"+"/",scale_factor=scale_factor)
+        plot_images("hr", lr_paths, hr_paths, args, logdir+"/"+"hr"+"/",scale_factor=scale_factor)
+        run_time = plot_images(model, lr_paths, hr_paths, args, logdir+"/"+args.generator+"/",scale_factor=scale_factor)
+
         lr_hot_test_path=hot_test['hot_test_game']['lr_hot_test_path']
         hr_hot_test_path=hot_test['hot_test_game']['hr_hot_test_path']
         lr_img_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(lr_hot_test_path) if len(filenames)!=0][0])[0:args.hot_test_size]
@@ -1071,7 +1139,7 @@ def get_test_dataset(model,scale_factor,args):
         test_print = [lr_img_paths,hr_img_paths]
 
         name_model = "game"+'_'+args.model+'_'+args.generator if args.generator != None else "game"+'_'+args.model 
-        run_time = print_hot_test(test_print[0],test_print[1],model=model,model_name=name_model,args=args,scale_factor=scale_factor)
+        # run_time = print_hot_test(test_print[0],test_print[1],model=model,model_name=name_model,args=args,scale_factor=scale_factor)
         print_eval(args.path_to_eval,eval,name_dataset,stat.mean(run_time))
     
     if ('sport' in args.test_cluster):
@@ -1099,6 +1167,15 @@ def get_test_dataset(model,scale_factor,args):
 
         eval = model.evaluate(test_batch, verbose=1)
 
+        lr_path=test['test_sport']['lr_test_path']
+        hr_path=test['test_sport']['hr_test_path']
+        logdir=test['test_sport']['logdir']
+        lr_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(lr_path) if len(filenames)!=0][0])
+        hr_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(hr_path) if len(filenames)!=0][0])
+        plot_images("bi", lr_paths, hr_paths, args, logdir+"/"+"bicubic"+"/",scale_factor=scale_factor)
+        plot_images("hr", lr_paths, hr_paths, args, logdir+"/"+"hr"+"/",scale_factor=scale_factor)
+        run_time = plot_images(model, lr_paths, hr_paths, args, logdir+"/"+args.generator+"/",scale_factor=scale_factor)
+
         lr_hot_test_path=hot_test['hot_test_sport']['lr_hot_test_path']
         hr_hot_test_path=hot_test['hot_test_sport']['hr_hot_test_path']
         lr_img_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(lr_hot_test_path) if len(filenames)!=0][0])[0:args.hot_test_size]
@@ -1106,7 +1183,7 @@ def get_test_dataset(model,scale_factor,args):
         test_print = [lr_img_paths,hr_img_paths]
 
         name_model = "sport"+'_'+args.model+'_'+args.generator if args.generator != None else "sport"+'_'+args.model 
-        run_time = print_hot_test(test_print[0],test_print[1],model=model,model_name=name_model,args=args,scale_factor=scale_factor)
+        # run_time = print_hot_test(test_print[0],test_print[1],model=model,model_name=name_model,args=args,scale_factor=scale_factor)
         print_eval(args.path_to_eval,eval,name_dataset,stat.mean(run_time))
 
     if ('podcast' in args.test_cluster):
@@ -1133,6 +1210,15 @@ def get_test_dataset(model,scale_factor,args):
 
         eval = model.evaluate(test_batch, verbose=1)
 
+        lr_path=test['test_podcast']['lr_test_path']
+        hr_path=test['test_podcast']['hr_test_path']
+        logdir=test['test_podcast']['logdir']
+        lr_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(lr_path) if len(filenames)!=0][0])
+        hr_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(hr_path) if len(filenames)!=0][0])
+        plot_images("bi", lr_paths, hr_paths, args, logdir+"/"+"bicubic"+"/",scale_factor=scale_factor)
+        plot_images("hr", lr_paths, hr_paths, args, logdir+"/"+"hr"+"/",scale_factor=scale_factor)
+        run_time = plot_images(model, lr_paths, hr_paths, args, logdir+"/"+args.generator+"/",scale_factor=scale_factor)
+
         lr_hot_test_path=hot_test['hot_test_podcast']['lr_hot_test_path']
         hr_hot_test_path=hot_test['hot_test_podcast']['hr_hot_test_path']
         lr_img_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(lr_hot_test_path) if len(filenames)!=0][0])[0:args.hot_test_size]
@@ -1140,7 +1226,7 @@ def get_test_dataset(model,scale_factor,args):
         test_print = [lr_img_paths,hr_img_paths]
 
         name_model = "podcast"+'_'+args.model+'_'+args.generator if args.generator != None else "podcast"+'_'+args.model 
-        run_time = print_hot_test(test_print[0],test_print[1],model=model,model_name=name_model,args=args,scale_factor=scale_factor)
+        # run_time = print_hot_test(test_print[0],test_print[1],model=model,model_name=name_model,args=args,scale_factor=scale_factor)
         print_eval(args.path_to_eval,eval,name_dataset,stat.mean(run_time))
 
 
@@ -1203,6 +1289,22 @@ def train_percsr(train_batch,steps_per_epoch, validation_steps,val_batch, test_b
         ra_gan.load_weights_gen(checkpoint_paph)
         trainable_layers(g, len(g.layers)-1)
         trainable_weights(g)
+
+    if (args.load_weights_perc):
+        print("Loading weights perceptual...")
+        checkpoint_paph="{}{}_{}x/{}/model.ckpt".format(args.ckpt_path,args.model,scale_factor,args.generator) 
+        ra_gan.load_weights(checkpoint_paph)
+
+        for i in range(len(g.layers)):
+            print("Camada: {}".format(g.layers[i].name))
+            if(g.layers[i].name == trainable_layer):
+                break
+            else:
+                g.layers[i].trainable=False
+        trainable_layers(g, len(g.layers)-1)
+        trainable_weights(g)
+
+        
 
 
     save_img_callback = SaveImageCallback(

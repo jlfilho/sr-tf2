@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# 1) First evaluate quantitative and perceptual-oriented on generic dataset;  
+
 # python3 train.py --model teacher \
 # --train_dataset_info_path datasets/loaded_harmonic/output/generic/train/4X/270p_qp17/dataset_info.txt \
 # --train_dataset_path datasets/loaded_harmonic/output/generic/train/4X/270p_qp17/dataset.tfrecords \
@@ -41,7 +43,7 @@
 # --logdir logdir/tmp/ --ckpt_path checkpoint/tmp/ --path_to_eval test_logdir/tmp/stats.txt \
 # --hot_test_size 8 --batch_size 8 --learning_rate 1e-3 --type_reduce_lr schedules \
 # --num_epochs 200 --steps_per_epoch 100 --epochs_per_save 100 --loss_fn mae \
-# --list_weights 1e-2 1e-1 1e-2 1e-1 --load_weight --eval
+# --list_weights 1e-3 5e-1 1e-3 1e-1 --load_weight --eval --test_cluster generic game sport podcast
 
 # sleep 10
 
@@ -60,22 +62,22 @@
 
 # sleep 10
 
-# python3 train.py --model percsr \
-# --generator imdn \
-# --train_dataset_info_path datasets/loaded_harmonic/output/generic/train/4X/270p_qp17/dataset_info.txt \
-# --train_dataset_path datasets/loaded_harmonic/output/generic/train/4X/270p_qp17/dataset.tfrecords \
-# --val_dataset_info_path datasets/loaded_harmonic/output/generic/val/4X/270p_qp17/dataset_info.txt \
-# --val_dataset_path datasets/loaded_harmonic/output/generic/val/4X/270p_qp17/dataset.tfrecords \
-# --test_dataset_info_path datasets/loaded_harmonic/output/generic/test/4X/270p_qp17/dataset_info.txt \
-# --test_dataset_path datasets/loaded_harmonic/output/generic/test/4X/270p_qp17/dataset.tfrecords \
-# --lr_hot_test_path datasets/loaded_harmonic/img_hot_test/generic/lr/270p_qp17/ \
-# --hr_hot_test_path datasets/loaded_harmonic/img_hot_test/generic/hr/1080p/ --test_logdir  test_logdir/tmp/ \
-# --logdir logdir/tmp/ --ckpt_path checkpoint/tmp/ --path_to_eval test_logdir/tmp/stats.txt \
-# --hot_test_size 8 --batch_size 8 --learning_rate 1e-3 --type_reduce_lr schedules \
-# --num_epochs 200 --steps_per_epoch 100 --epochs_per_save 100 --loss_fn mae \
-# --list_weights 1e-2 1e-1 1e-2 1e-1 --load_weight --eval
+python3 train.py --model percsr \
+--generator imdn \
+--train_dataset_info_path datasets/loaded_harmonic/output/generic/train/4X/270p_qp17/dataset_info.txt \
+--train_dataset_path datasets/loaded_harmonic/output/generic/train/4X/270p_qp17/dataset.tfrecords \
+--val_dataset_info_path datasets/loaded_harmonic/output/generic/val/4X/270p_qp17/dataset_info.txt \
+--val_dataset_path datasets/loaded_harmonic/output/generic/val/4X/270p_qp17/dataset.tfrecords \
+--test_dataset_info_path datasets/loaded_harmonic/output/generic/test/4X/270p_qp17/dataset_info.txt \
+--test_dataset_path datasets/loaded_harmonic/output/generic/test/4X/270p_qp17/dataset.tfrecords \
+--lr_hot_test_path datasets/loaded_harmonic/img_hot_test/generic/lr/270p_qp17/ \
+--hr_hot_test_path datasets/loaded_harmonic/img_hot_test/generic/hr/1080p/ --test_logdir  test_logdir/tmp/ \
+--logdir logdir/tmp/ --ckpt_path checkpoint/tmp/ --path_to_eval test_logdir/tmp/stats.txt \
+--hot_test_size 8 --batch_size 8 --learning_rate 1e-3 --type_reduce_lr schedules \
+--num_epochs 200 --steps_per_epoch 100 --epochs_per_save 100 --loss_fn mae \
+--list_weights 1e-3 5e-1 1e-3 1e-1 --load_weight --eval --test_cluster generic game sport podcast
 
-# sleep 10
+sleep 10
 
 # python3 train.py --model g_rtsrgan \
 # --train_dataset_info_path datasets/loaded_harmonic/output/generic/train/4X/270p_qp17/dataset_info.txt \
@@ -105,7 +107,7 @@
 # --logdir logdir/tmp/ --ckpt_path checkpoint/tmp/ --path_to_eval test_logdir/tmp/stats.txt \
 # --hot_test_size 8 --batch_size 8 --learning_rate 1e-3 --type_reduce_lr schedules \
 # --num_epochs 200 --steps_per_epoch 100 --epochs_per_save 100 --loss_fn mae \
-# --list_weights 1e-2 1e-1 1e-2 1e-1 --load_weight --eval
+# --list_weights 1e-3 5e-1 1e-3 1e-1 --load_weight --eval --test_cluster generic game sport podcast
 
 # sleep 10
 
@@ -125,20 +127,20 @@
 
 # sleep 10
 
-# python3 train.py --model percsr \
-# --generator g_ertsrgan \
-# --train_dataset_info_path datasets/loaded_harmonic/output/generic/train/4X/270p_qp17/dataset_info.txt \
-# --train_dataset_path datasets/loaded_harmonic/output/generic/train/4X/270p_qp17/dataset.tfrecords \
-# --val_dataset_info_path datasets/loaded_harmonic/output/generic/val/4X/270p_qp17/dataset_info.txt \
-# --val_dataset_path datasets/loaded_harmonic/output/generic/val/4X/270p_qp17/dataset.tfrecords \
-# --test_dataset_info_path datasets/loaded_harmonic/output/generic/test/4X/270p_qp17/dataset_info.txt \
-# --test_dataset_path datasets/loaded_harmonic/output/generic/test/4X/270p_qp17/dataset.tfrecords \
-# --lr_hot_test_path datasets/loaded_harmonic/img_hot_test/generic/lr/270p_qp17/ \
-# --hr_hot_test_path datasets/loaded_harmonic/img_hot_test/generic/hr/1080p/ --test_logdir  test_logdir/tmp/ \
-# --logdir logdir/tmp/ --ckpt_path checkpoint/tmp/ --path_to_eval test_logdir/tmp/stats.txt \
-# --hot_test_size 8 --batch_size 8 --learning_rate 1e-3 --type_reduce_lr schedules \
-# --num_epochs 200 --steps_per_epoch 100 --epochs_per_save 100 --loss_fn mae \
-# --list_weights 1e-2 1e-1 1e-2 1e-1 --load_weight --eval
+python3 train.py --model percsr \
+--generator g_ertsrgan \
+--train_dataset_info_path datasets/loaded_harmonic/output/generic/train/4X/270p_qp17/dataset_info.txt \
+--train_dataset_path datasets/loaded_harmonic/output/generic/train/4X/270p_qp17/dataset.tfrecords \
+--val_dataset_info_path datasets/loaded_harmonic/output/generic/val/4X/270p_qp17/dataset_info.txt \
+--val_dataset_path datasets/loaded_harmonic/output/generic/val/4X/270p_qp17/dataset.tfrecords \
+--test_dataset_info_path datasets/loaded_harmonic/output/generic/test/4X/270p_qp17/dataset_info.txt \
+--test_dataset_path datasets/loaded_harmonic/output/generic/test/4X/270p_qp17/dataset.tfrecords \
+--lr_hot_test_path datasets/loaded_harmonic/img_hot_test/generic/lr/270p_qp17/ \
+--hr_hot_test_path datasets/loaded_harmonic/img_hot_test/generic/hr/1080p/ --test_logdir  test_logdir/tmp/ \
+--logdir logdir/tmp/ --ckpt_path checkpoint/tmp/ --path_to_eval test_logdir/tmp/stats.txt \
+--hot_test_size 8 --batch_size 8 --learning_rate 1e-3 --type_reduce_lr schedules \
+--num_epochs 200 --steps_per_epoch 100 --epochs_per_save 100 --loss_fn mae \
+--list_weights 1e-3 5e-1 1e-3 1e-1 --load_weight --eval --test_cluster generic game sport podcast
 
 # sleep 10
 
@@ -170,6 +172,6 @@
 # --logdir logdir/tmp/ --ckpt_path checkpoint/tmp/ --path_to_eval test_logdir/tmp/stats.txt \
 # --hot_test_size 8 --batch_size 8 --learning_rate 1e-3 --type_reduce_lr schedules \
 # --num_epochs 200 --steps_per_epoch 100 --epochs_per_save 100 --loss_fn mae \
-# --list_weights 1e-2 1e-1 1e-2 1e-1 --load_weight --eval
+# --list_weights 1e-3 5e-1 1e-3 1e-1 --load_weight --eval --test_cluster generic game sport podcast
 
 # sleep 10

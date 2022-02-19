@@ -3,10 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import PIL
 import os
+import cv2
 
 #from timeit import default_timer as timer
 import time
 from tensorflow.keras.preprocessing.image import img_to_array
+from tensorflow.keras.preprocessing.image import array_to_img
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 from tensorflow.keras.preprocessing.image import load_img
@@ -14,7 +16,6 @@ from models.metrics import lpips
 
 
 
-#from tensorflow.keras.preprocessing.image import array_to_img
 
 norm_1 = tf.keras.layers.Rescaling(scale=1./255.)
 norm_2 = tf.keras.layers.Rescaling(scale=1./127.5,offset=-1)
@@ -171,4 +172,39 @@ def plot_test_images(model,lr_img_paths,hr_img_paths, logdir_path=None,scale_fac
     print("Avg. PSNR of reconstructions is %.4f" % (total_test_psnr / len(hr_img_paths)))
     print("Avg running sec per frame %.4f" % (sum(time_elapsed) / len(time_elapsed)))
 
+    return time_elapsed
+
+
+def plot_images(model,lr_img_paths,hr_img_paths, args, logdir_path=None, scale_factor=2):
+    index=1
+    time_elapsed = []
+    if (model == "bi"):
+        print("Saving image bicubic...")
+        for lr_path, hr_path in zip(lr_img_paths,hr_img_paths):
+            if(index % args.range_to_save == 0):
+                img_lr = load_img(lr_path)
+                w = img_lr.size[0] * scale_factor
+                h = img_lr.size[1] * scale_factor
+                img_bi = img_lr.resize((w, h))
+                img_bi.save(logdir_path+str(index)+".png")
+                #cv2.imwrite(logdir_path+"_"+str(index)+".jpg", cv2.cvtColor(sr_img_arr, cv2.COLOR_BGR2RGB))
+            index+=1
+    elif (model == "hr"):
+        print("Saving image HR...")
+        for lr_path, hr_path in zip(lr_img_paths,hr_img_paths):
+            if(index % args.range_to_save == 0):
+                img_hr = load_img(hr_path)
+                img_hr.save(logdir_path+str(index)+".png")
+                #cv2.imwrite(logdir_path+"_"+str(index)+".jpg", cv2.cvtColor(sr_img_arr, cv2.COLOR_BGR2RGB))
+            index+=1
+    else:
+        print("Saving image SR...")
+        for lr_path, hr_path in zip(lr_img_paths,hr_img_paths):
+            if(index % args.range_to_save == 0):
+                img_lr = load_img(lr_path)
+                img_sr,t_elapsed = upscale_image(model, img_lr)
+                time_elapsed.append(t_elapsed)
+                img_sr.save(logdir_path+str(index)+".png")
+                #cv2.imwrite(logdir_path+"_"+str(index)+".jpg", cv2.cvtColor(sr_img_arr, cv2.COLOR_BGR2RGB))
+            index+=1
     return time_elapsed

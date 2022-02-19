@@ -31,6 +31,8 @@ class VGGLossNoActivation(object):
         return tf.math.reduce_mean(tf.math.square(self.model(self.preprocess_vgg(y_true)) - self.model(self.preprocess_vgg(y_pred))),None)
 
     def custom_perceptual_loss(self, y_true, y_pred):
+        y_true = tf.keras.layers.Concatenate()([y_true, y_true, y_true])
+        y_pred = tf.keras.layers.Concatenate()([y_pred, y_pred, y_pred])
         return self.loss_fn(self.model(self.preprocess_vgg(y_true)),self.model(self.preprocess_vgg(y_pred)))
     
     def euclidean_content_loss(self, y_true, y_pred):
@@ -63,8 +65,8 @@ class GANLoss(object):
         loss_dis=self.loss_dis(teacher_img_sr,img_sr)
         loss_adv = self.adv_loss(real_output, fake_output) 
         loss_pix = self.loss_pix(img_hr, img_sr)
-        img_hr = tf.keras.layers.Concatenate()([img_hr, img_hr, img_hr])
-        img_sr = tf.keras.layers.Concatenate()([img_sr, img_sr, img_sr])
+        #img_hr = tf.keras.layers.Concatenate()([img_hr, img_hr, img_hr])
+        #img_sr = tf.keras.layers.Concatenate()([img_sr, img_sr, img_sr])
         loss_fea = self.loss_fea(img_hr,img_sr)
         total_loss = self.alfa * loss_pix + self.eta * loss_fea + self.lbd * loss_dis 
         return total_loss, self.alfa * loss_pix , self.eta * loss_fea, self.lbd * loss_dis, self.mu*loss_adv

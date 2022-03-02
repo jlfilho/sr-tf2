@@ -2,6 +2,8 @@
 
 # 2) Second evaluate quantitative and perceptual-oriented with content-aware on game dataset;  
 
+
+
 # python3 train.py --model teacher \
 # --train_dataset_info_path datasets/loaded_harmonic/output/game/train/4X/270p_qp17/dataset_info.txt \
 # --train_dataset_path datasets/loaded_harmonic/output/game/train/4X/270p_qp17/dataset.tfrecords \
@@ -14,6 +16,9 @@
 # --logdir logdir/tmp/ --ckpt_path checkpoint/tmp/ --path_to_eval test_logdir/tmp/stats.txt \
 # --hot_test_size 8 --batch_size 32 --learning_rate 1e-3 --type_reduce_lr schedules \
 # --num_epochs 100 --steps_per_epoch 200 --epochs_per_save 50 --loss_fn mae --load_weights
+
+rm -r test_logdir/test/game/percep
+rm -r test_logdir/test/game/quant
 
 mkdir test_logdir/test/game/percep
 mkdir test_logdir/test/game/quant
@@ -131,11 +136,11 @@ python3 train.py --model percsr \
 
 sleep 10
 mv test_logdir/test/game/g_rtsrgan test_logdir/test/game/percep/
-mkdir test_logdir/test/game/g_ertsrgan
+mkdir test_logdir/test/game/g_rtvsrgan
 
-The best g_ertsrgan
-python3 train.py --model g_ertsrgan \
---generator g_ertsrgan \
+The best g_rtvsrgan
+python3 train.py --model g_rtvsrgan \
+--generator g_rtvsrgan \
 --train_dataset_info_path datasets/loaded_harmonic/output/game/train/4X/270p_qp17/dataset_info.txt \
 --train_dataset_path datasets/loaded_harmonic/output/game/train/4X/270p_qp17/dataset.tfrecords \
 --val_dataset_info_path datasets/loaded_harmonic/output/game/test/4X/270p_qp17/dataset_info.txt \
@@ -149,11 +154,11 @@ python3 train.py --model g_ertsrgan \
 --num_epochs 100 --steps_per_epoch 100 --epochs_per_save 50 --loss_fn mse --eval --test_cluster game --range_to_save 30
 
 sleep 10
-mv test_logdir/test/game/g_ertsrgan test_logdir/test/game/quant/
-mkdir test_logdir/test/game/g_ertsrgan
+mv test_logdir/test/game/g_rtvsrgan test_logdir/test/game/quant/
+mkdir test_logdir/test/game/g_rtvsrgan
 
 python3 train.py --model percsr \
---generator g_ertsrgan \
+--generator g_rtvsrgan \
 --train_dataset_info_path datasets/loaded_harmonic/output/game/train/4X/270p_qp17/dataset_info.txt \
 --train_dataset_path datasets/loaded_harmonic/output/game/train/4X/270p_qp17/dataset.tfrecords \
 --val_dataset_info_path datasets/loaded_harmonic/output/game/test/4X/270p_qp17/dataset_info.txt \
@@ -168,7 +173,7 @@ python3 train.py --model percsr \
 --list_weights 1e-3 5e-1 1e-3 1e-1 --eval --test_cluster game --range_to_save 30
 
 sleep 10
-mv test_logdir/test/game/g_ertsrgan test_logdir/test/game/percep/
+mv test_logdir/test/game/g_rtvsrgan test_logdir/test/game/percep/
 mkdir test_logdir/test/game/evsrnet
 
 python3 train.py --model evsrnet \
@@ -206,7 +211,7 @@ python3 train.py --model percsr \
 
 sleep 10
 mv test_logdir/test/game/evsrnet test_logdir/test/game/percep/
-cp -R test_logdir/test/game/bicubic test_logdir/test/game/percep/
-cp -R test_logdir/test/game/hr test_logdir/test/game/percep/
-mv test_logdir/test/game/bicubic test_logdir/test/game/quant/
-mv test_logdir/test/game/hr test_logdir/test/game/quant/
+#cp -R test_logdir/test/game/bicubic test_logdir/test/game/percep/
+#cp -R test_logdir/test/game/hr test_logdir/test/game/percep/
+#mv test_logdir/test/game/bicubic test_logdir/test/game/quant/
+#mv test_logdir/test/game/hr test_logdir/test/game/quant/

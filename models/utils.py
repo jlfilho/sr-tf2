@@ -12,7 +12,7 @@ from tensorflow.keras.preprocessing.image import array_to_img
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 from tensorflow.keras.preprocessing.image import load_img
-from models.metrics import lpips
+from models.metrics import lpips, rmse
 
 
 
@@ -121,6 +121,7 @@ def plot_test_images(model,lr_img_paths,hr_img_paths, logdir_path=None,scale_fac
     total_test_ssim = 0.0
     total_bicubic_lpips = 0.0
     total_test_lpips = 0.0
+    total_test_rmse = 0.0
 
 
     index=0
@@ -155,22 +156,27 @@ def plot_test_images(model,lr_img_paths,hr_img_paths, logdir_path=None,scale_fac
         total_bicubic_lpips += bicubic_lpips
         total_test_lpips += test_lpips
 
+        test_rmse = rmse(sr_img_arr, hr_img_arr)
+        # print("RMSE: ", test_rmse)
+        total_test_rmse += test_rmse
+
     
+        # images = {'Low Resoluiton': [lr_img_arr.astype('uint8'), hr_img_arr.astype('uint8'),[0,0]],
+        #                   'Bicubic': [bi_img_arr.astype('uint8'), hr_img_arr.astype('uint8'),[bicubic_psnr,bicubic_ssim,bicubic_lpips]],
+        #                   model_name: [sr_img_arr.astype('uint8'), hr_img_arr.astype('uint8'),[test_psnr,test_ssim,test_lpips]], 
+        #                   'High Resolution': [hr_img_arr.astype('uint8'),hr_img_arr.astype('uint8'),[0,0]]}
 
-        images = {'Low Resoluiton': [lr_img_arr.astype('uint8'), hr_img_arr.astype('uint8'),[0,0]],
-                          'Bicubic': [bi_img_arr.astype('uint8'), hr_img_arr.astype('uint8'),[bicubic_psnr,bicubic_ssim,bicubic_lpips]],
-                          model_name: [sr_img_arr.astype('uint8'), hr_img_arr.astype('uint8'),[test_psnr,test_ssim,test_lpips]], 
-                          'High Resolution': [hr_img_arr.astype('uint8'),hr_img_arr.astype('uint8'),[0,0]]}
+        # plot_results(images, logdir_path, scale_factor=scale_factor,model_name=model_name,epoch=epoch,index=index,time=t_elapsed)
 
-        plot_results(images, logdir_path, scale_factor=scale_factor,model_name=model_name,epoch=epoch,index=index,time=t_elapsed)
-
-        
         index+=1
   
 
-    print("Avg. PSNR of lowres images is %.4f" % (total_bicubic_psnr / len(hr_img_paths)))
+    # print("Avg. PSNR of lowres images is %.4f" % (total_bicubic_psnr / len(hr_img_paths)))
     print("Avg. PSNR of reconstructions is %.4f" % (total_test_psnr / len(hr_img_paths)))
-    print("Avg running sec per frame %.4f" % (sum(time_elapsed) / len(time_elapsed)))
+    # print("Avg running sec per frame %.4f" % (sum(time_elapsed) / len(time_elapsed)))
+    print("Avg. RMSE of reconstructions is %.4f" % (total_test_rmse / len(hr_img_paths)))
+    print("Avg. LPIPS of reconstructions is %.4f" % (total_test_lpips / len(hr_img_paths)))
+    print("Avg. SIMM of reconstructions is %.4f" % (total_test_ssim / len(hr_img_paths)))
 
     return time_elapsed
 
@@ -207,4 +213,49 @@ def plot_images(model,lr_img_paths,hr_img_paths, args, logdir_path=None, scale_f
                 img_sr.save(logdir_path+str(index)+".png")
                 #cv2.imwrite(logdir_path+"_"+str(index)+".jpg", cv2.cvtColor(sr_img_arr, cv2.COLOR_BGR2RGB))
             index+=1
+    return time_elapsed
+
+
+def print_metrics(lr_img_paths,hr_img_paths, scale_factor=2):
+    index=0
+    time_elapsed = []
+    total_bicubic_psnr = 0.0
+    total_bicubic_ssim = 0.0
+    total_bicubic_lpips = 0.0
+    total_bicubic_rmse = 0.0
+
+   
+    for lr_path, hr_path in zip(lr_img_paths,hr_img_paths):
+        img_lr = load_img(lr_path)
+        img_hr = load_img(hr_path)
+        w = img_lr.size[0] * scale_factor
+        h = img_lr.size[1] * scale_factor
+        img_bi = img_lr.resize((w, h))
+
+        bi_img_arr = img_to_array(img_bi)
+        hr_img_arr = img_to_array(img_hr)
+        if(index > 1):
+            bicubic_psnr = tf.image.psnr(bi_img_arr, hr_img_arr, max_val=255)
+            # print("PSNR images is %.4f" % (bicubic_psnr))
+            # print(index)
+            total_bicubic_psnr += bicubic_psnr
+
+        bicubic_rmse = rmse(bi_img_arr, hr_img_arr)
+        #print("RMSE images is %.4f" % (bicubic_rmse))
+        total_bicubic_rmse += bicubic_rmse
+
+        bicubic_ssim = tf.image.ssim(bi_img_arr, hr_img_arr, max_val=255)
+        total_bicubic_ssim += bicubic_ssim
+
+        bicubic_lpips = lpips(arr_to_tr(bi_img_arr), arr_to_tr(hr_img_arr))
+        total_bicubic_lpips += bicubic_lpips
+        
+        index+=1
+    print(len(hr_img_paths))
+    print(index)
+    print("Avg. PSNR of lowres images is %.4f" % (total_bicubic_psnr / (len(hr_img_paths)-2)))
+    print("Avg. SSIM of lowres images is %.4f" % (total_bicubic_ssim / len(hr_img_paths)))
+    print("Avg. RMSE of lowres images is %.4f" % (total_bicubic_rmse / len(hr_img_paths)))
+    print("Avg. LPIPS of lowres images is %.4f" % (total_bicubic_lpips / len(hr_img_paths)))
+    
     return time_elapsed

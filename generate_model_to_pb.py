@@ -7,8 +7,8 @@ from tensorflow.python.framework.convert_to_constants import convert_variables_t
 import tensorflow.compat.v1 as tf1
 
 from models.espcn.model_espcn import ESPCN as espcn 
-from models.ertsrgan.model_generator import G_ERTSRGAN_ as g_ertsrgan
-from models.mdn_rainbow.model_mdn_rainbow import IMDN
+from models.rtvsrgan.model_generator import G_RTVSRGAN as g_rtvsrgan
+from models.imdn.model_imdn import IMDN
 from models.evsrnet.model_evsrnet import EVSRNet
 from models.rtsrgan.model_generator import G_RTSRGAN as g_rtsrgan
 
@@ -17,11 +17,11 @@ from models.rtsrgan.model_generator import G_RTSRGAN as g_rtsrgan
 
 def get_arguments():
     parser = argparse.ArgumentParser(description='Generate binary model file')
-    parser.add_argument('--model', type=str, default='ertsrgan', choices=['espcn', 'ertsrgan','rtsrgan','imdn','evsrnet','g_rtsrgan'],
+    parser.add_argument('--model', type=str, default='rtvsrgan', choices=['espcn', 'rtvsrgan','rtsrgan','imdn','evsrnet','g_rtsrgan'],
                         help='What model to use for generation')
     parser.add_argument('--output_folder', type=str, default='./dnn_bin_models/',
                         help='where to put generated files')
-    parser.add_argument('--ckpt_path', default='./checkpoint/g_ertsrgan/',
+    parser.add_argument('--ckpt_path', default='./checkpoint/g_rtvsrgan/',
                         help='Path to the model checkpoint, from which weights are loaded')
     parser.add_argument('--scale_factor', type=int, default=2, choices=[2, 3, 4],
                         help='What scale factor was used for chosen model')
@@ -73,8 +73,8 @@ def main():
         print("Path to the checkpoint file was not provided")
         exit(1)
 
-    if args.model == 'ertsrgan':
-        model = g_ertsrgan(scale_factor=args.scale_factor)
+    if args.model == 'rtvsrgan':
+        model = g_rtvsrgan(scale_factor=args.scale_factor)
         model.load_weights(args.ckpt_path+"model.ckpt")
         print("change_input_shape")
         model = change_input_shape(model,args.model)

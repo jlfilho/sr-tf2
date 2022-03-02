@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-def d_ertsrgan(filters=64,input_shape=(72,72,1)):
+def d_rtvsrgan(filters=64,input_shape=(72,72,1)):
 
     def conv2d_block(input, filters, strides=1, bn=True):
         d = tf.keras.layers.Conv2D(filters, kernel_size=3, strides=strides, padding='same')(input)
@@ -22,10 +22,10 @@ def d_ertsrgan(filters=64,input_shape=(72,72,1)):
     x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
     x = tf.keras.layers.Dropout(0.4)(x)
     x = tf.keras.layers.Dense(1)(x)
-    model = tf.keras.Model(inputs=input, outputs=x,name='d_ertsrgan')
+    model = tf.keras.Model(inputs=input, outputs=x,name='d_rtvsrgan')
     return model
 
-def rad_ertsrgan(discriminator=None,shape_hr=(72,72,1)):
+def rad_rtvsrgan(discriminator=None,shape_hr=(72,72,1)):
         
     def comput_Ra(x):
         d_output1,d_output2 = x

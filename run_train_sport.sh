@@ -113,8 +113,8 @@ python3 train.py --model percsr \
 
 sleep 10
 
-#The best g_ertsrgan
-python3 train.py --model g_ertsrgan \
+#The best g_rtvsrgan
+python3 train.py --model g_rtvsrgan \
 --train_dataset_info_path datasets/loaded_harmonic/output/sport/train/4X/270p_qp17/dataset_info.txt \
 --train_dataset_path datasets/loaded_harmonic/output/sport/train/4X/270p_qp17/dataset.tfrecords \
 --val_dataset_info_path datasets/loaded_harmonic/output/sport/test/4X/270p_qp17/dataset_info.txt \
@@ -130,7 +130,7 @@ python3 train.py --model g_ertsrgan \
 sleep 10
 
 python3 train.py --model percsr \
---generator g_ertsrgan \
+--generator g_rtvsrgan \
 --train_dataset_info_path datasets/loaded_harmonic/output/sport/train/4X/270p_qp17/dataset_info.txt \
 --train_dataset_path datasets/loaded_harmonic/output/sport/train/4X/270p_qp17/dataset.tfrecords \
 --val_dataset_info_path datasets/loaded_harmonic/output/sport/test/4X/270p_qp17/dataset_info.txt \

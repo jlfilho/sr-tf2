@@ -131,11 +131,11 @@ python3 train.py --model percsr \
 
 sleep 10
 mv test_logdir/test/sport/g_rtsrgan test_logdir/test/sport/percep/
-mkdir test_logdir/test/sport/g_ertsrgan
+mkdir test_logdir/test/sport/g_rtvsrgan
 
-The best g_ertsrgan
-python3 train.py --model g_ertsrgan \
---generator g_ertsrgan \
+The best g_rtvsrgan
+python3 train.py --model g_rtvsrgan \
+--generator g_rtvsrgan \
 --train_dataset_info_path datasets/loaded_harmonic/output/sport/train/4X/270p_qp17/dataset_info.txt \
 --train_dataset_path datasets/loaded_harmonic/output/sport/train/4X/270p_qp17/dataset.tfrecords \
 --val_dataset_info_path datasets/loaded_harmonic/output/sport/test/4X/270p_qp17/dataset_info.txt \
@@ -149,11 +149,11 @@ python3 train.py --model g_ertsrgan \
 --num_epochs 100 --steps_per_epoch 100 --epochs_per_save 50 --loss_fn mse --eval --test_cluster sport --range_to_save 10
 
 sleep 10
-mv test_logdir/test/sport/g_ertsrgan test_logdir/test/sport/quant/
-mkdir test_logdir/test/sport/g_ertsrgan
+mv test_logdir/test/sport/g_rtvsrgan test_logdir/test/sport/quant/
+mkdir test_logdir/test/sport/g_rtvsrgan
 
 python3 train.py --model percsr \
---generator g_ertsrgan \
+--generator g_rtvsrgan \
 --train_dataset_info_path datasets/loaded_harmonic/output/sport/train/4X/270p_qp17/dataset_info.txt \
 --train_dataset_path datasets/loaded_harmonic/output/sport/train/4X/270p_qp17/dataset.tfrecords \
 --val_dataset_info_path datasets/loaded_harmonic/output/sport/test/4X/270p_qp17/dataset_info.txt \
@@ -168,7 +168,7 @@ python3 train.py --model percsr \
 --list_weights 1e-3 5e-1 1e-3 1e-1 --eval --test_cluster sport --range_to_save 10
 
 sleep 10
-mv test_logdir/test/sport/g_ertsrgan test_logdir/test/sport/percep/
+mv test_logdir/test/sport/g_rtvsrgan test_logdir/test/sport/percep/
 mkdir test_logdir/test/sport/evsrnet
 
 python3 train.py --model evsrnet \

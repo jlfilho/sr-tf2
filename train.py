@@ -5,7 +5,7 @@ import statistics as stat
 
 
 
-from models.utils import plot_test_images, plot_images
+from models.utils import plot_test_images, plot_images, print_metrics
 
 from models.espcn.model_espcn import ESPCN as espcn
 
@@ -15,14 +15,16 @@ from models.rtsrgan.model_generator import G_RTSRGAN as g_rtsrgan
 from models.rtsrgan.model_discriminator import d_rtsrgan
 from models.rtsrgan.model_gan import GAN
 
-from models.ertsrgan.model_generator import G_ERTSRGAN_ as g_ertsrgan 
-from models.ertsrgan.KnowledgeDistillation import Distiller
+from models.rtvsrgan.model_generator import G_RTVSRGAN as g_rtvsrgan 
+from models.rtvsrgan.KnowledgeDistillation import Distiller
 
-from models.ertsrgan.model_discriminator import d_ertsrgan,rad_ertsrgan
-from models.ertsrgan.model_ragan import RaGAN
+from models.rtvsrgan.model_discriminator import d_rtvsrgan, rad_rtvsrgan
+from models.rtvsrgan.model_ragan import RaGAN
 
+from models.rtvsrgan.model_discriminator import d_percsr, rad_percsr
 from models.percsr.model_percsr import PercSR
 from models.percsr.model_teacher import Teacher
+
 
 from models.imdn.model_imdn import IMDN
 
@@ -95,9 +97,9 @@ test_datasets = {
 
 
 
-LIST_MODEL=['espcn','g_rtsrgan','rtsrgan','g_ertsrgan','teacher','ertsrgan','imdn','k_dist','percsr','evsrnet']
+LIST_MODEL=['espcn','g_rtsrgan','rtsrgan','g_rtvsrgan','teacher','rtvsrgan','imdn','k_dist','percsr','evsrnet']
 MODEL='rtvsrgan'
-LIST_GENERATOR=[None,'espcn','g_rtsrgan','imdn','evsrnet','g_ertsrgan']
+LIST_GENERATOR=[None,'espcn','g_rtsrgan','imdn','evsrnet','g_rtvsrgan']
 GENERATOR=None
 BATCH_SIZE = 32
 VAL_BATCH_SIZE = 16
@@ -373,9 +375,9 @@ def main():
 
 
     # Ours models
-    elif args.model == 'g_ertsrgan':
+    elif args.model == 'g_rtvsrgan':
         callbacks=[checkpoint_callback,tensorboard_callback,earlystopping,reduce_lr] 
-        eval,run_time=train_g_ertsrgan(train_batch,steps_per_epoch, validation_steps,val_batch, test_batch, test_steps, test_print, scale_factor,args,callbacks,checkpoint_paph,file_writer_cm,trainable_layer=args.trainable_layer)
+        eval,run_time=train_g_rtvsrgan(train_batch,steps_per_epoch, validation_steps,val_batch, test_batch, test_steps, test_print, scale_factor,args,callbacks,checkpoint_paph,file_writer_cm,trainable_layer=args.trainable_layer)
 
         print_eval(args.path_to_eval,eval,args.model+"_{}X_q{}".format(str(scale_factor),str(args.train_dataset_path).split('_q')[-1]),run_time)
     
@@ -385,9 +387,9 @@ def main():
 
         print_eval(args.path_to_eval,eval,args.model+"_{}X_q{}".format(str(scale_factor),str(args.train_dataset_path).split('_q')[-1]),run_time)
 
-    elif args.model == 'ertsrgan':
+    elif args.model == 'rtvsrgan':
         callbacks=[tensorboard_callback,reduce_lr]
-        eval,run_time=train_ertsrgan(train_batch,steps_per_epoch, validation_steps,val_batch, test_batch, test_steps, test_print, scale_factor,args,callbacks,checkpoint_paph,file_writer_cm,trainable_layer=args.trainable_layer)
+        eval,run_time=train_rtvsrgan(train_batch,steps_per_epoch, validation_steps,val_batch, test_batch, test_steps, test_print, scale_factor,args,callbacks,checkpoint_paph,file_writer_cm,trainable_layer=args.trainable_layer)
 
         print_eval(args.path_to_eval,eval,args.model+"_{}X_q{}".format(str(scale_factor),str(args.train_dataset_path).split('_q')[-1]),run_time)
     
@@ -747,7 +749,7 @@ def train_teacher(train_batch,steps_per_epoch, validation_steps,val_batch, test_
     if args.transfer_learning:
         checkpoint_paph_from="{}{}_{}x/model.ckpt".format("checkpoint/",args.model,args.scaleFrom)
         print("Transfer learning from {}x-upscale model...".format(args.scaleFrom))
-        modelFrom = g_ertsrgan(scale_factor=args.scaleFrom)
+        modelFrom = g_rtvsrgan(scale_factor=args.scaleFrom)
         modelFrom.load_weights(checkpoint_paph_from)
         for i in range(len(modelFrom.layers)):
             if(modelFrom.layers[i].name == trainable_layer):
@@ -798,15 +800,15 @@ def train_teacher(train_batch,steps_per_epoch, validation_steps,val_batch, test_
     return eval, model.get_run_time()
 
 
-def train_g_ertsrgan(train_batch,steps_per_epoch, validation_steps,val_batch, test_batch, test_steps, test_print, scale_factor,args,callbacks,checkpoint_paph,file_writer_cm,trainable_layer):
-    model = g_ertsrgan(scale_factor=scale_factor,method=args.inter_method)
+def train_g_rtvsrgan(train_batch,steps_per_epoch, validation_steps,val_batch, test_batch, test_steps, test_print, scale_factor,args,callbacks,checkpoint_paph,file_writer_cm,trainable_layer):
+    model = g_rtvsrgan(scale_factor=scale_factor,method=args.inter_method)
     if args.load_weights:
         print("Loading weights...")
         model.load_weights(checkpoint_paph)
     if args.transfer_learning:
         checkpoint_paph_from="{}{}_{}x/model.ckpt".format("checkpoint/",args.model,args.scaleFrom)
         print("Transfer learning from {}x-upscale model...".format(args.scaleFrom))
-        modelFrom = g_ertsrgan(scale_factor=args.scaleFrom)
+        modelFrom = g_rtvsrgan(scale_factor=args.scaleFrom)
         modelFrom.load_weights(checkpoint_paph_from)
         for i in range(len(modelFrom.layers)):
             if(modelFrom.layers[i].name == trainable_layer):
@@ -875,11 +877,11 @@ def train_k_distillation(train_batch,steps_per_epoch, validation_steps,val_batch
     vgg_loss = VGGLoss(shape_hr,aux_loss_fn)
     perc_loss = vgg_loss.custom_perceptual_loss
       
-    teacher = g_ertsrgan(channels=1,scale_factor=scale_factor)
+    teacher = g_rtvsrgan(channels=1,scale_factor=scale_factor)
     print("Loading teacher weights...")
-    weights_paph="{}{}_{}x/model.ckpt".format(args.ckpt_path,'g_ertsrgan',scale_factor)
+    weights_paph="{}{}_{}x/model.ckpt".format(args.ckpt_path,'g_rtvsrgan',scale_factor)
     teacher.load_weights(weights_paph)
-    student = g_ertsrgan(channels=1,scale_factor=scale_factor) 
+    student = g_rtvsrgan(channels=1,scale_factor=scale_factor) 
     student.build((None, None, None,1))
 
     # Initialize and compile distiller
@@ -896,7 +898,7 @@ def train_k_distillation(train_batch,steps_per_epoch, validation_steps,val_batch
     trainable_weights(student)
     if args.load_weights:
         print("Loading student weights...")
-        checkpoint_paph="{}{}_{}x/model.ckpt".format(args.ckpt_path,'g_ertsrgan',scale_factor)
+        checkpoint_paph="{}{}_{}x/model.ckpt".format(args.ckpt_path,'g_rtvsrgan',scale_factor)
         student.load_weights(checkpoint_paph)
         trainable_layers(student, len(student.layers)-1)
         trainable_weights(student)
@@ -960,12 +962,12 @@ def train_k_distillation(train_batch,steps_per_epoch, validation_steps,val_batch
     return eval,distiller.student.get_run_time()
 
 
-def train_ertsrgan(train_batch,steps_per_epoch, validation_steps,val_batch, test_batch, test_steps, test_print, scale_factor,args,callbacks,checkpoint_paph,file_writer_cm,trainable_layer):
-    g=g_ertsrgan(scale_factor=scale_factor)
+def train_rtvsrgan(train_batch,steps_per_epoch, validation_steps,val_batch, test_batch, test_steps, test_print, scale_factor,args,callbacks,checkpoint_paph,file_writer_cm,trainable_layer):
+    g=g_rtvsrgan(scale_factor=scale_factor)
     g.build((None, None, None,1))
 
-    d=d_ertsrgan(input_shape=(36*scale_factor,36*scale_factor,1))
-    ra_d=rad_ertsrgan(discriminator=d,shape_hr=(36*scale_factor,36*scale_factor,1))
+    d=d_rtvsrgan(input_shape=(36*scale_factor,36*scale_factor,1))
+    ra_d=rad_rtvsrgan(discriminator=d,shape_hr=(36*scale_factor,36*scale_factor,1))
     
 
     if args.loss_fn == "mse":
@@ -994,7 +996,7 @@ def train_ertsrgan(train_batch,steps_per_epoch, validation_steps,val_batch, test
                 metrics=[psnr,ssim,rmse,lpips])
     if (args.load_weights):
         print("Loading weights...") 
-        checkpoint_paph="{}{}_{}x/model.ckpt".format(args.ckpt_path,'g_ertsrgan',scale_factor)
+        checkpoint_paph="{}{}_{}x/model.ckpt".format(args.ckpt_path,'g_rtvsrgan',scale_factor)
         ra_gan.load_weights_gen(checkpoint_paph)
         trainable_layers(g, len(g.layers)-1)
         trainable_weights(g)
@@ -1022,7 +1024,7 @@ def train_ertsrgan(train_batch,steps_per_epoch, validation_steps,val_batch, test
     callbacks.append(checkpoint_callback)
 
     ra_gan.fit(train_batch, epochs=args.num_epochs,callbacks=callbacks,verbose=1,steps_per_epoch=steps_per_epoch,validation_steps=validation_steps,validation_data=val_batch)
-    checkpoint_paph="{}{}_{}x/g_ertsrgan/model.ckpt".format(args.ckpt_path,args.model,scale_factor) 
+    checkpoint_paph="{}{}_{}x/g_rtvsrgan/model.ckpt".format(args.ckpt_path,args.model,scale_factor) 
     ra_gan.save_weights_gen(checkpoint_paph)
 
     print("Evaluate model")
@@ -1040,12 +1042,13 @@ def model_generator(args=None,scale_factor=None):
         model= IMDN(scale_factor=scale_factor)
     elif args.generator== 'evsrnet':
         model= EVSRNet(scale_factor=scale_factor,method=args.inter_method)
-    elif args.generator== 'g_ertsrgan':
-        model= g_ertsrgan(scale_factor=scale_factor)
+    elif args.generator== 'g_rtvsrgan':
+        model= g_rtvsrgan(scale_factor=scale_factor)
+    elif args.generator== 'teacher':
+        model = Teacher(channels=1,scale_factor=scale_factor,distillation_rate=args.distillation_rate)
     else:
         exit(1)
     return model
-
 
 
 
@@ -1056,6 +1059,7 @@ def print_hot_test(lr_hot_test_path,hr_hot_test_path,model=None,model_name=None,
     
 
 def get_test_dataset(model,scale_factor,args):
+    bic = True
     if ('generic' in args.test_cluster): 
         # test dataset
         test_dataset_path=test_datasets['test_generic']['test_dataset_path']
@@ -1078,16 +1082,20 @@ def get_test_dataset(model,scale_factor,args):
         name_dataset = args.model+'_'+args.generator+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) if args.generator!=None else args.model+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) 
         print(name_dataset,args.path_to_eval)
 
-        eval = model.evaluate(test_batch, verbose=1)
 
         lr_path=test['test_generic']['lr_test_path']
         hr_path=test['test_generic']['hr_test_path']
         logdir=test['test_generic']['logdir']
         lr_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(lr_path) if len(filenames)!=0][0])
         hr_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(hr_path) if len(filenames)!=0][0])
-        plot_images("bi", lr_paths, hr_paths, args, logdir+"/"+"bicubic"+"/",scale_factor=scale_factor)
-        plot_images("hr", lr_paths, hr_paths, args, logdir+"/"+"hr"+"/",scale_factor=scale_factor)
-        run_time = plot_images(model, lr_paths, hr_paths, args, logdir+"/"+args.generator+"/",scale_factor=scale_factor)
+        if (bic):
+            print_metrics(lr_paths, hr_paths, scale_factor=scale_factor)
+            exit(1)
+        # plot_images("bi", lr_paths, hr_paths, args, logdir+"/"+"bicubic"+"/",scale_factor=scale_factor)
+        # plot_images("hr", lr_paths, hr_paths, args, logdir+"/"+"hr"+"/",scale_factor=scale_factor)
+        # run_time = plot_images(model, lr_paths, hr_paths, args, logdir+"/"+args.generator+"/",scale_factor=scale_factor)
+        run_time = print_hot_test(lr_paths,hr_paths,model=model,model_name=args.model,args=args,scale_factor=scale_factor)
+        eval = model.evaluate(test_batch, verbose=1)
 
         lr_hot_test_path=hot_test['hot_test_generic']['lr_hot_test_path']
         hr_hot_test_path=hot_test['hot_test_generic']['hr_hot_test_path']
@@ -1121,16 +1129,20 @@ def get_test_dataset(model,scale_factor,args):
         name_dataset = args.model+'_'+args.generator+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) if args.generator != None else args.model+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) 
         print(name_dataset,args.path_to_eval)
 
-        eval = model.evaluate(test_batch, verbose=1)
 
         lr_path=test['test_game']['lr_test_path']
         hr_path=test['test_game']['hr_test_path']
         logdir=test['test_game']['logdir']
         lr_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(lr_path) if len(filenames)!=0][0])
         hr_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(hr_path) if len(filenames)!=0][0])
-        plot_images("bi", lr_paths, hr_paths, args, logdir+"/"+"bicubic"+"/",scale_factor=scale_factor)
-        plot_images("hr", lr_paths, hr_paths, args, logdir+"/"+"hr"+"/",scale_factor=scale_factor)
-        run_time = plot_images(model, lr_paths, hr_paths, args, logdir+"/"+args.generator+"/",scale_factor=scale_factor)
+        if (bic):
+            print_metrics(lr_paths, hr_paths, scale_factor=scale_factor)
+            exit(1)
+        # plot_images("bi", lr_paths, hr_paths, args, logdir+"/"+"bicubic"+"/",scale_factor=scale_factor)
+        # plot_images("hr", lr_paths, hr_paths, args, logdir+"/"+"hr"+"/",scale_factor=scale_factor)
+        # run_time = plot_images(model, lr_paths, hr_paths, args, logdir+"/"+args.generator+"/",scale_factor=scale_factor)
+        run_time = print_hot_test(lr_paths,hr_paths,model=model,model_name=args.model,args=args,scale_factor=scale_factor)
+        eval = model.evaluate(test_batch, verbose=1)
 
         lr_hot_test_path=hot_test['hot_test_game']['lr_hot_test_path']
         hr_hot_test_path=hot_test['hot_test_game']['hr_hot_test_path']
@@ -1165,16 +1177,20 @@ def get_test_dataset(model,scale_factor,args):
 
         print(name_dataset,args.path_to_eval)
 
-        eval = model.evaluate(test_batch, verbose=1)
 
         lr_path=test['test_sport']['lr_test_path']
         hr_path=test['test_sport']['hr_test_path']
         logdir=test['test_sport']['logdir']
         lr_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(lr_path) if len(filenames)!=0][0])
         hr_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(hr_path) if len(filenames)!=0][0])
-        plot_images("bi", lr_paths, hr_paths, args, logdir+"/"+"bicubic"+"/",scale_factor=scale_factor)
-        plot_images("hr", lr_paths, hr_paths, args, logdir+"/"+"hr"+"/",scale_factor=scale_factor)
-        run_time = plot_images(model, lr_paths, hr_paths, args, logdir+"/"+args.generator+"/",scale_factor=scale_factor)
+        if (bic):
+            print_metrics(lr_paths, hr_paths, scale_factor=scale_factor)
+            exit(1)
+        # plot_images("bi", lr_paths, hr_paths, args, logdir+"/"+"bicubic"+"/",scale_factor=scale_factor)
+        # plot_images("hr", lr_paths, hr_paths, args, logdir+"/"+"hr"+"/",scale_factor=scale_factor)
+        # run_time = plot_images(model, lr_paths, hr_paths, args, logdir+"/"+args.generator+"/",scale_factor=scale_factor)
+        run_time = print_hot_test(lr_paths,hr_paths,model=model,model_name=args.model,args=args,scale_factor=scale_factor)
+        eval = model.evaluate(test_batch, verbose=1)
 
         lr_hot_test_path=hot_test['hot_test_sport']['lr_hot_test_path']
         hr_hot_test_path=hot_test['hot_test_sport']['hr_hot_test_path']
@@ -1208,16 +1224,20 @@ def get_test_dataset(model,scale_factor,args):
         name_dataset = args.model+'_'+args.generator+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) if args.generator != None else args.model+"_{}_{}X_q{}".format(str(test_dataset_path).split('/')[3],str(scale_factor),str(test_dataset_path).split('_q')[-1]) 
         print(name_dataset,args.path_to_eval)
 
-        eval = model.evaluate(test_batch, verbose=1)
 
         lr_path=test['test_podcast']['lr_test_path']
         hr_path=test['test_podcast']['hr_test_path']
         logdir=test['test_podcast']['logdir']
         lr_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(lr_path) if len(filenames)!=0][0])
         hr_paths=sorted([[dp+filename for filename in filenames] for dp, dn, filenames in os.walk(hr_path) if len(filenames)!=0][0])
-        plot_images("bi", lr_paths, hr_paths, args, logdir+"/"+"bicubic"+"/",scale_factor=scale_factor)
-        plot_images("hr", lr_paths, hr_paths, args, logdir+"/"+"hr"+"/",scale_factor=scale_factor)
-        run_time = plot_images(model, lr_paths, hr_paths, args, logdir+"/"+args.generator+"/",scale_factor=scale_factor)
+        if (bic):
+            print_metrics(lr_paths, hr_paths, scale_factor=scale_factor)
+            exit(1)
+        # plot_images("bi", lr_paths, hr_paths, args, logdir+"/"+"bicubic"+"/",scale_factor=scale_factor)
+        # plot_images("hr", lr_paths, hr_paths, args, logdir+"/"+"hr"+"/",scale_factor=scale_factor)
+        # run_time = plot_images(model, lr_paths, hr_paths, args, logdir+"/"+args.generator+"/",scale_factor=scale_factor)
+        run_time = print_hot_test(lr_paths,hr_paths,model=model,model_name=args.model,args=args,scale_factor=scale_factor)
+        eval = model.evaluate(test_batch, verbose=1)
 
         lr_hot_test_path=hot_test['hot_test_podcast']['lr_hot_test_path']
         hr_hot_test_path=hot_test['hot_test_podcast']['hr_hot_test_path']
@@ -1236,8 +1256,8 @@ def train_percsr(train_batch,steps_per_epoch, validation_steps,val_batch, test_b
     g=model_generator(scale_factor=scale_factor,args=args)
     g.build((None, None, None,1))
 
-    d=d_ertsrgan(input_shape=(36*scale_factor,36*scale_factor,1))
-    ra_d=rad_ertsrgan(discriminator=d,shape_hr=(36*scale_factor,36*scale_factor,1))
+    d=d_percsr(input_shape=(36*scale_factor,36*scale_factor,1))
+    ra_d=rad_percsr(discriminator=d,shape_hr=(36*scale_factor,36*scale_factor,1))
 
     if args.loss_fn == "mse":
         aux_loss = tf.keras.losses.MeanSquaredError()        
@@ -1287,7 +1307,7 @@ def train_percsr(train_batch,steps_per_epoch, validation_steps,val_batch, test_b
         print("Loading weights...")
         checkpoint_paph="{}{}_{}x/model.ckpt".format(args.ckpt_path,args.generator,scale_factor) 
         ra_gan.load_weights_gen(checkpoint_paph)
-        trainable_layers(g, len(g.layers)-1)
+        # trainable_layers(g, len(g.layers)-1)
         trainable_weights(g)
 
     if (args.load_weights_perc):
@@ -1301,7 +1321,7 @@ def train_percsr(train_batch,steps_per_epoch, validation_steps,val_batch, test_b
                 break
             else:
                 g.layers[i].trainable=False
-        trainable_layers(g, len(g.layers)-1)
+        #trainable_layers(g, len(g.layers)-1)
         trainable_weights(g)
 
         

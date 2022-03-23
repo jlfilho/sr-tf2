@@ -21,7 +21,7 @@ from models.rtvsrgan.KnowledgeDistillation import Distiller
 from models.rtvsrgan.model_discriminator import d_rtvsrgan, rad_rtvsrgan
 from models.rtvsrgan.model_ragan import RaGAN
 
-from models.rtvsrgan.model_discriminator import d_percsr, rad_percsr
+from models.percsr.model_discriminator import d_percsr, rad_percsr
 from models.percsr.model_percsr import PercSR
 from models.percsr.model_teacher import Teacher
 
